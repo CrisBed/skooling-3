@@ -1,0 +1,430 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, viewport-fit=cover">
+  <meta name="theme-color" content="#2457d6">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Skooling 3.0">
+  <meta name="description" content="Libri, quaderni e compiti sempre con te, anche offline.">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="apple-touch-icon" href="./icons/skooling3-180.png">
+  <link rel="icon" href="./icons/skooling3.svg">
+  <link rel="stylesheet" href="./style.css">
+  <link rel="stylesheet" href="./studio.css">
+  <link rel="stylesheet" href="./tutor.css">
+  <link rel="stylesheet" href="./navigation.css">
+  <link rel="stylesheet" href="./agenda.css">
+  <link rel="stylesheet" href="./routine.css">
+  <link rel="stylesheet" href="./appearance.css">
+  <link rel="stylesheet" href="./tutor-avatar.css">
+  <link rel="stylesheet" href="./book-pages.css">
+  <title>Skooling 3.0</title>
+  <link rel="stylesheet" href="./lesson-materials.css">
+</head>
+<body>
+  <div id="app-shell">
+    <header class="topbar">
+      <button id="menu-toggle" hidden class="menu-toggle" type="button" aria-label="Apri menu" aria-expanded="false" aria-controls="side-menu"><span aria-hidden="true">☰</span><span>Menu</span></button>
+      <button class="brand" type="button" data-go="libreria" aria-label="Vai alla Libreria">
+        <img class="brand-mark" src="./icons/skooling3-180.png" alt="" width="40" height="40">
+        <span>Skooling <small>3.0 · Laboratorio</small></span>
+      </button>
+      <button type="button" class="button secondary" id="student-switch">Cambia profilo</button>
+      <div id="offline-state" class="status-pill" role="status">Pronto offline</div>
+    </header>
+
+    <div id="menu-backdrop" class="menu-backdrop" hidden></div>
+    <nav id="side-menu" class="main-nav" aria-label="Menu di Skooling">
+      <header class="menu-heading"><div><strong>Il tuo spazio</strong><p>Ogni cosa al suo posto.</p></div><button id="menu-close" hidden type="button" aria-label="Chiudi menu">×</button></header>
+      <section class="menu-group" aria-labelledby="menu-school"><h2 id="menu-school">A scuola</h2><p>Ascolta, leggi e prendi appunti.</p>
+        <button type="button" data-go="agenda">Da ricordare</button>
+        <button type="button" data-go="oggi">La giornata a scuola</button>
+        <button type="button" data-go="libreria">Libri</button>
+        <button type="button" data-go="quaderni">Quaderni</button>
+        <button type="button" data-go="compiti">Segna i compiti</button>
+        <button type="button" data-go="orario">Orario delle lezioni</button>
+        <button type="button" data-go="album">Foto e materiali</button>
+      </section>
+      <section class="menu-group menu-home" aria-labelledby="menu-home"><h2 id="menu-home">A casa</h2><p>Capisci, esercitati e ripassa.</p>
+        <button type="button" data-go="compiti">I compiti da fare</button>
+        <button type="button" data-go="studio">Lezioni e argomenti</button>
+        <button type="button" data-go="tutor">Il mio tutor</button>
+        <button type="button" data-go="ripasso">Ripasso e schede</button>
+        <button type="button" data-go="voti">Verifiche e voti</button>
+        <button type="button" data-go="progressi">I miei progressi</button>
+      </section>
+      <section class="menu-group menu-routines" aria-labelledby="menu-routines"><h2 id="menu-routines">La mia giornata</h2><p>Prima di uscire, pomeriggio e sera.</p>
+        <button type="button" data-go="routine">Le mie routine</button>
+        <button type="button" data-go="viaggio">Zaino offline</button>
+      </section>
+      <footer class="menu-settings"><button type="button" data-go="impostazioni">Impostazioni</button></footer>
+    </nav>
+
+    <main id="main-content">
+      <aside id="agenda-strip" class="agenda-strip" aria-label="Impegni da ricordare"></aside>
+      <section id="agenda" class="view" aria-label="Compiti e verifiche da ricordare"></section>
+      <section id="tutor" class="view" aria-label="Studia con me"></section>
+      <section id="routine" class="view" aria-label="Le mie routine"></section>
+      <section id="studio" class="view" aria-label="Materie e studio"></section>
+      <section id="ripasso" class="view" aria-label="Ripasso programmato"></section>
+      <section id="voti" class="view" aria-label="Verifiche e voti"></section>
+      <section id="progressi" class="view" aria-label="Progressi nello studio"></section>
+      <section id="viaggio" class="view" aria-label="Zaino offline"></section>
+      <section id="oggi" class="view active" aria-labelledby="oggi-title">
+        <div class="view-heading">
+          <div><p class="eyebrow" id="oggi-eyebrow">Oggi</p><h1 id="oggi-title">La tua giornata</h1><p class="subtitle" id="oggi-subtitle">Le materie di oggi e i libri che servono.</p></div>
+          <div class="heading-buttons">
+            <button class="button secondary" type="button" data-go="orario"><span aria-hidden="true">🕘</span> L’orario</button>
+            <button class="button secondary" type="button" data-go="materie-libri"><span aria-hidden="true">▤</span> Libri per materia</button>
+          </div>
+        </div>
+        <div class="oggi-griglia">
+          <article class="oggi-blocco">
+            <span class="card-label">Le ore di oggi</span>
+            <div id="oggi-materie" class="ora-elenco" aria-live="polite"></div>
+          </article>
+          <article class="oggi-blocco">
+            <span class="card-label">I libri di oggi</span>
+            <p class="small-copy">Un tocco e il libro si apre.</p>
+            <div id="oggi-libri" class="libro-riga" aria-live="polite"></div>
+          </article>
+          <article class="oggi-blocco zaino">
+            <span class="card-label">Prepara lo zaino</span>
+            <h2 id="zaino-titolo">Domani</h2>
+            <div id="zaino-libri" class="libro-riga" aria-live="polite"></div>
+          </article>
+        </div>
+      </section>
+
+      <section id="libreria" class="view" aria-labelledby="libreria-title">
+        <div class="view-heading">
+          <div>
+            <p class="eyebrow">Il tuo scaffale</p>
+            <h1 id="libreria-title">I tuoi libri</h1>
+            <p class="subtitle">Apri un libro e riparti esattamente da dove eri arrivato.</p>
+          </div>
+          <label class="button primary file-button">
+            <input id="pdf-input" type="file" accept="application/pdf" multiple hidden>
+            <span aria-hidden="true">＋</span> Aggiungi libro
+          </label>
+        </div>
+        <div class="filters" role="search">
+          <label class="search-field"><span class="sr-only">Cerca libri</span><input id="book-search" type="search" placeholder="Cerca un libro"></label>
+          <label><span class="sr-only">Filtra per materia</span><select id="book-subject-filter"><option value="">Tutte le materie</option></select></label>
+          <button id="search-inside" class="button secondary" type="button"><span aria-hidden="true">⌕</span> Cerca nel testo</button>
+        </div>
+        <section id="search-results" class="search-results" aria-live="polite" hidden>
+          <div class="search-results-head">
+            <div><p class="eyebrow">Dentro i libri</p><strong id="search-results-title">Ricerca</strong></div>
+            <button id="search-close" class="button secondary" type="button">Torna ai libri</button>
+          </div>
+          <div id="search-results-list" class="search-results-list"></div>
+          <p id="search-results-note" class="search-note" hidden></p>
+        </section>
+        <div id="library-empty" class="empty-state">
+          <div class="empty-book" aria-hidden="true"><span>S</span></div>
+          <h2>Il primo libro ti aspetta</h2>
+          <p>Tocca “Aggiungi libro” e scegli uno o più PDF dall’iPad.</p>
+        </div>
+        <div id="book-grid" class="book-grid" aria-live="polite"></div>
+      </section>
+
+      <section id="quaderni" class="view" aria-labelledby="quaderni-title">
+        <div class="view-heading">
+          <div><p class="eyebrow">Scrivi e disegna</p><h1 id="quaderni-title">I tuoi quaderni</h1><p class="subtitle">Fogli a righe o quadretti, sempre in ordine.</p></div>
+          <button id="new-notebook" class="button primary" type="button"><span aria-hidden="true">＋</span> Nuovo quaderno</button>
+        </div>
+        <div id="notebook-empty" class="empty-state"><div class="empty-sheet" aria-hidden="true"></div><h2>Prepara il primo quaderno</h2><p>Scegli titolo, materia e tipo di foglio.</p></div>
+        <div id="notebook-grid" class="notebook-grid" aria-live="polite"></div>
+      </section>
+
+      <section id="compiti" class="view" aria-labelledby="compiti-title">
+        <div class="diario">
+          <div class="diario-oggi-colonna">
+            <p class="eyebrow">Oggi sul diario</p>
+            <div id="diario-oggi" class="diario-oggi" aria-live="polite"></div>
+          </div>
+          <div class="diario-compiti">
+            <div class="view-heading">
+              <div><p class="eyebrow">Prossimi giorni</p><h1 id="compiti-title">Compiti</h1><p class="subtitle">Prima le scadenze più vicine, senza sorprese.</p></div>
+              <button id="new-task" class="button primary" type="button"><span aria-hidden="true">＋</span> Nuovo compito</button>
+            </div>
+            <div class="giorni-scelta">
+              <p class="eyebrow">Scrivi un compito per…</p>
+              <div id="giorni-prossimi" class="giorni-prossimi" role="group" aria-label="Scegli il giorno di consegna"></div>
+            </div>
+            <div class="task-tabs" role="group" aria-label="Filtra compiti">
+              <button type="button" class="chip active" data-task-filter="todo">Da fare</button>
+              <button type="button" class="chip" data-task-filter="all">Tutti</button>
+              <button type="button" class="chip" data-task-filter="done">Fatti</button>
+            </div>
+            <div id="task-empty" class="empty-state compact"><div class="empty-check" aria-hidden="true">✓</div><h2>Tutto tranquillo</h2><p>I nuovi compiti compariranno qui in ordine di consegna.</p></div>
+            <div id="task-list" class="task-list" aria-live="polite"></div>
+          </div>
+          <div class="diario-orario">
+            <div class="settimana-testa">
+              <p class="eyebrow">L’orario della settimana</p>
+              <button class="button secondary small" type="button" data-go="orario">Cambia l’orario</button>
+            </div>
+            <div id="orario-settimana" class="orario-settimana" aria-live="polite"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="album" class="view" aria-labelledby="album-title">
+        <div class="view-heading">
+          <div><p class="eyebrow" id="album-eyebrow">Laboratori e giornate di classe</p><h1 id="album-title">Album</h1><p class="subtitle" id="album-subtitle">Ogni gita, festa o laboratorio ha il suo album.</p></div>
+          <div class="heading-buttons">
+            <button id="album-back" class="button secondary" type="button" hidden><span aria-hidden="true">←</span> Tutti gli album</button>
+            <label class="button primary file-button">
+              <input id="album-input" type="file" accept="image/*" capture="environment" multiple hidden>
+              <span aria-hidden="true">＋</span> Aggiungi foto
+            </label>
+          </div>
+        </div>
+        <div id="album-empty" class="empty-state"><div class="empty-photo" aria-hidden="true">✻</div><h2>Ancora nessun album</h2><p>Tocca “Aggiungi foto”: l’album nasce col nome della data di oggi, e lo puoi rinominare come vuoi.</p></div>
+        <div id="album-grid" class="album-grid" aria-live="polite"></div>
+      </section>
+
+      <section id="orario" class="view" aria-labelledby="orario-title">
+        <div class="view-heading">
+          <div><p class="eyebrow">Come sono fatte le giornate</p><h1 id="orario-title">L’orario</h1><p class="subtitle">Cambia l’ora che è cambiata: l’app rifà da sola le materie e i libri di ogni giornata.</p></div>
+          <div class="heading-buttons">
+            <button id="orario-ripristina" class="button secondary" type="button">Rimetti quello della scuola</button>
+            <button class="button primary" type="button" data-go="oggi">Fatto</button>
+          </div>
+        </div>
+        <div id="orario-editor" class="orario-editor"></div>
+      </section>
+
+      <section id="materie-libri" class="view" aria-labelledby="materie-libri-title">
+        <div class="view-heading">
+          <div><p class="eyebrow">Una volta sola</p><h1 id="materie-libri-title">Libri per materia</h1><p class="subtitle">Collega ogni materia ai suoi libri. Poi l’app sa da sola quali libri servono ogni giorno.</p></div>
+          <div class="heading-buttons"><button class="button primary" type="button" data-go="oggi">Fatto</button></div>
+        </div>
+        <div id="materie-libri-vuoto" class="empty-state compact" hidden><h2>Prima i libri</h2><p>Aggiungi i libri dalla Libreria: poi torna qui e collegali alle materie.</p></div>
+        <div id="materie-libri-elenco" class="materie-griglia"></div>
+      </section>
+
+      <section id="impostazioni" class="view" aria-labelledby="settings-title">
+        <div class="view-heading"><div><p class="eyebrow">Tutto sul dispositivo</p><h1 id="settings-title">Impostazioni</h1><p class="subtitle">Archivio sul dispositivo e sincronizzazione Google facoltativa.</p></div></div>
+        <article class="settings-card app-version-card" aria-labelledby="version-title">
+          <span class="card-label">Skooling</span><h2 id="version-title">Versione installata</h2>
+          <p id="app-version" role="status">Controllo della versione…</p>
+        </article>
+        <div class="settings-grid">
+          <p><a href="./installazione.html" target="_blank" rel="noopener">Porta la 3.0 sull’iPad · guida al passaggio sicuro</a></p>
+<article class="settings-card" id="sync-card">
+            <span class="card-label">I miei dispositivi</span><h2>Google Drive</h2>
+            <p>L’iPad principale invia il lavoro approvato. Su computer le prove restano temporanee fino a “Invia agli altri dispositivi”. Foto, audio e materiali personali vengono trasferiti una volta; i PDF dei libri si ricollegano separatamente.</p>
+            <p id="sync-account">Nessun account collegato</p><p id="sync-last" class="small-copy"></p>
+            <p id="sync-status" role="status">Controllo del collegamento…</p>
+            <div class="button-row"><button id="sync-connect" class="button primary" type="button" disabled>Collega Google Drive</button><button id="sync-now" class="button secondary" type="button" disabled>Sincronizza ora</button><button id="sync-disconnect" class="button secondary" type="button" disabled>Scollega</button></div>
+            <p class="small-copy">Serve lo stesso account su tutti i dispositivi. Il collegamento va rinnovato quando Google lo richiede. La sincronizzazione funziona con l’app aperta e fuori dalla scrittura; non sostituisce il backup.</p>
+            <div id="sync-conflicts"></div>
+            <details><summary>Configurazione tecnica</summary><label for="sync-client-id">ID client OAuth Google</label><input id="sync-client-id" type="text" autocomplete="off" placeholder="ID pubblico della configurazione"><button id="sync-save-config" class="button secondary" type="button">Salva configurazione</button><p class="small-copy">Solo l’identificatore pubblico. Non inserire password o segreti.</p></details>
+          </article>
+
+          <article class="settings-card accent-card">
+            <span class="card-label">Spazio</span><h2>Archivio locale</h2>
+            <div class="storage-meter" aria-hidden="true"><span id="storage-bar"></span></div>
+            <p id="storage-copy">Controllo dello spazio disponibile…</p>
+            <p id="persistence-copy" class="small-copy"></p>
+          </article>
+          <article class="settings-card">
+            <span class="card-label">Sicurezza</span><h2>Backup</h2>
+            <label for="backup-mode">Cosa vuoi salvare?</label>
+            <select id="backup-mode"><option value="essenziale" selected>Essenziale · il mio lavoro</option><option value="completo">Completo · tutti i libri</option></select>
+            <p id="backup-mode-copy">Conserva tutti i quaderni, le scritte, i materiali, i risultati e le routine. Include i PDF dei libri annotati; gli altri libri vanno reimportati dopo il ripristino.</p>
+            <div id="backup-missing" hidden><strong>Libri da reimportare</strong><p>Il backup ripristinato non conteneva questi PDF:</p><ul id="backup-missing-list"></ul></div>
+            <div class="button-row"><button id="export-backup" class="button primary" type="button">Esporta backup</button><label class="button secondary file-button"><input id="import-backup" type="file" hidden>Importa backup</label></div>
+          </article>
+          <article class="settings-card">
+            <span class="card-label">Scrittura</span><h2>Dito e Pencil</h2>
+            <label class="switch-row"><span><strong>Disegna anche col dito</strong><small>La Pencil disegna sempre. Di solito il dito serve per scorrere.</small></span><input id="global-finger-draw" type="checkbox" role="switch"></label>
+          </article>
+          <article class="settings-card">
+            <span class="card-label">Privacy</span><h2>Nessuno ti osserva</h2>
+            <p>Skooling non usa pubblicità o statistiche. Funziona anche in modalità aereo. Se colleghi Google, il lavoro scelto viene salvato nello spazio privato di Skooling sul tuo Drive. I PDF dei libri restano sul dispositivo. Foto e materiali personali possono essere trasferiti nel Drive privato collegato.</p>
+          </article>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <section id="lettore-pdf" class="workspace" aria-label="Lettore PDF" hidden>
+    <header class="workspace-header">
+      <button id="close-reader" class="icon-button" type="button" aria-label="Chiudi il libro">←</button>
+      <div class="workspace-title"><strong id="reader-title">Libro</strong><span id="reader-subject"></span></div>
+      <div class="writing-modes" role="group" aria-label="Modalità di lavoro">
+        <button type="button" data-writing-mode="leggi" aria-pressed="false">Leggi</button>
+        <button type="button" data-writing-mode="scrivi" aria-pressed="true" class="active">Scrivi</button>
+      </div>
+      <div class="workspace-actions">
+        <button id="reader-two-pages" class="small-button" type="button" aria-pressed="false">2 pagine</button>
+        <button id="toggle-thumbnails" class="icon-button" type="button" aria-label="Mostra miniature">▦</button>
+        <button id="toggle-bookmark" class="icon-button" type="button" aria-label="Aggiungi segnalibro">☆</button>
+        <button id="toggle-bookmark-list" class="icon-button" type="button" aria-label="Elenco dei segnalibri">≡</button>
+        <button id="toggle-night" class="icon-button" type="button" aria-label="Modalità notte">◐</button>
+        <button id="reader-fullscreen" class="icon-button" type="button" aria-label="Schermo intero" aria-pressed="false">⤢</button>
+        <button id="toggle-reader-tools" class="icon-button" type="button" aria-label="Mostra strumenti">✎</button>
+      </div>
+    </header>
+    <button id="reader-exit-fullscreen" class="fullscreen-exit" type="button" aria-label="Esci da schermo intero">⤡</button>
+    <div class="writing-bar">
+      <div class="writing-shortcuts" role="group" aria-label="Strumenti rapidi">
+        <button type="button" data-quick-tool="penna" class="active" aria-pressed="true">Penna</button>
+        <button type="button" data-quick-tool="gomma" aria-pressed="false">Gomma</button>
+        <button type="button" data-quick-tool="evidenziatore" aria-pressed="false">Evidenzia</button>
+        <button type="button" data-quick-undo>Annulla</button>
+      </div>
+      <span data-writing-status role="status"></span>
+    </div>
+    <div class="workspace-body">
+      <aside id="thumbnail-panel" class="thumbnail-panel" aria-label="Miniature delle pagine" hidden><div id="thumbnail-list"></div></aside>
+      <aside id="bookmark-panel" class="bookmark-panel" aria-label="Segnalibri del libro" hidden>
+        <div class="bookmark-head"><strong>Segnalibri</strong></div>
+        <div id="bookmark-list"></div>
+        <p id="bookmark-empty" class="bookmark-empty">Nessun segnalibro in questo libro. Tocca la stella per metterne uno sulla pagina che stai leggendo.</p>
+      </aside>
+      <div class="reader-area">
+        <div id="reader-loading" class="loading-card" role="status" hidden><span class="spinner"></span><span>Preparo la pagina…</span></div>
+        <div id="pdf-scroll" class="page-scroll">
+          <div id="pdf-pages" class="pdf-pages">
+            <div id="pdf-page-wrap" class="page-wrap">
+              <canvas id="pdf-canvas" aria-label="Pagina del libro"></canvas>
+              <canvas id="pdf-annotations" class="drawing-canvas" aria-label="Annotazioni sulla pagina"></canvas>
+            </div>
+            <div id="pdf-page-wrap-2" class="page-wrap" hidden>
+              <canvas id="pdf-canvas-2" aria-label="Pagina destra del libro"></canvas>
+              <canvas id="pdf-annotations-2" class="drawing-canvas" aria-label="Annotazioni sulla pagina destra"></canvas>
+            </div>
+          </div>
+        </div>
+        <div class="page-controls">
+          <button id="prev-page" class="icon-button" type="button" aria-label="Pagina precedente">‹</button>
+          <label>Pagina del libro <input id="page-number" type="text" inputmode="numeric" size="5" aria-label="Pagina del libro" placeholder="Allinea"> <span id="page-total">di 1</span></label>
+          <button id="next-page" class="icon-button" type="button" aria-label="Pagina successiva">›</button>
+          <button id="focus-left-page" class="small-button" type="button" hidden>Sinistra</button>
+          <button id="focus-right-page" class="small-button" type="button" hidden>Destra</button>
+          <button id="align-book-pages" class="small-button" type="button">Allinea numeri</button>
+          <button id="fit-page" class="small-button" type="button">Adatta</button>
+          <span id="zoom-label" class="zoom-label">100%</span>
+        </div>
+      </div>
+      <aside id="reader-tools" class="toolbox" aria-label="Strumenti di annotazione">
+        <div class="toolbox-top"><strong>Astuccio</strong><label class="mini-switch"><input data-readonly type="checkbox" role="switch"> Sola lettura</label></div>
+        <div class="tool-grid">
+          <button type="button" data-tool="penna" class="active">Penna</button><button type="button" data-tool="evidenziatore">Evidenzia</button><button type="button" data-tool="sottolineatura">Sottolinea</button><button type="button" data-tool="gomma">Gomma</button><button type="button" data-tool="testo">Testo</button><button type="button" data-tool="linea">Riga</button><button type="button" data-tool="freccia">Freccia</button><button type="button" data-tool="cerchio">Cerchio</button><button type="button" data-tool="rettangolo">Quadrato</button><button type="button" data-tool="sposta">Sposta</button>
+        </div>
+        <div class="palette" data-palette aria-label="Colori"></div>
+        <div class="widths" role="group" aria-label="Spessore"><button type="button" data-width="2"><span class="dot thin"></span></button><button type="button" data-width="5" class="active"><span class="dot medium"></span></button><button type="button" data-width="10"><span class="dot thick"></span></button></div>
+        <div class="history-buttons"><button type="button" data-undo>↶ Annulla</button><button type="button" data-redo>↷ Ripeti</button></div>
+      </aside>
+    </div>
+  </section>
+
+  <section id="editor-quaderno" class="workspace" aria-label="Quaderno" hidden>
+    <header class="workspace-header">
+      <button id="close-notebook" class="icon-button" type="button" aria-label="Chiudi il quaderno">←</button>
+      <div class="workspace-title"><strong id="notebook-title">Quaderno</strong><span id="notebook-subject"></span></div>
+      <div class="writing-modes" role="group" aria-label="Modalità di lavoro">
+        <button type="button" data-writing-mode="leggi" aria-pressed="false">Leggi</button>
+        <button type="button" data-writing-mode="scrivi" aria-pressed="true" class="active">Scrivi</button>
+      </div>
+      <div class="workspace-actions"><button id="notebook-two-pages" class="small-button" type="button" aria-pressed="false">2 pagine</button><button id="export-notebook-page" class="small-button" type="button">PNG pagina</button><button id="export-notebook-pdf" class="small-button" type="button">PDF quaderno</button><button id="notebook-fullscreen" class="icon-button" type="button" aria-label="Schermo intero" aria-pressed="false">⤢</button><button id="toggle-notebook-tools" class="icon-button" type="button" aria-label="Mostra strumenti">✎</button></div>
+    </header>
+    <button id="notebook-exit-fullscreen" class="fullscreen-exit" type="button" aria-label="Esci da schermo intero">⤡</button>
+    <div class="writing-bar">
+      <div class="writing-shortcuts" role="group" aria-label="Strumenti rapidi">
+        <button type="button" data-quick-tool="penna" class="active" aria-pressed="true">Penna</button>
+        <button type="button" data-quick-tool="gomma" aria-pressed="false">Gomma</button>
+        <button type="button" data-quick-tool="evidenziatore" aria-pressed="false">Evidenzia</button>
+        <button type="button" data-quick-undo>Annulla</button>
+      </div>
+      <span data-writing-status role="status"></span>
+    </div>
+    <div class="paper-reference">
+      <span id="notebook-paper-measure">A4 · 21 × 29,7 cm</span>
+      <span id="notebook-zoom" aria-live="polite">Vista di lavoro</span>
+      <button id="notebook-overview" type="button" class="small-button" aria-pressed="false">Foglio intero</button>
+    </div>
+    <div class="workspace-body">
+      <div class="reader-area notebook-area">
+        <div class="page-scroll"><div id="notebook-pages" class="notebook-pages"><div id="notebook-page-wrap" class="notebook-paper lined"><canvas id="notebook-canvas" class="drawing-canvas" aria-label="Pagina del quaderno"></canvas></div><div id="notebook-page-wrap-2" class="notebook-paper lined" hidden><canvas id="notebook-canvas-2" class="drawing-canvas" aria-label="Seconda pagina del quaderno"></canvas></div></div></div>
+        <div class="page-controls"><button id="notebook-prev" class="icon-button" type="button" aria-label="Pagina precedente">‹</button><span id="notebook-page-label">Pagina 1 di 1</span><button id="notebook-next" class="icon-button" type="button" aria-label="Pagina successiva">›</button><button id="notebook-add-page" class="small-button" type="button">＋ Pagina</button><button id="notebook-delete-page" class="small-button danger-text" type="button">Elimina pagina</button></div>
+      </div>
+      <aside id="notebook-tools" class="toolbox" aria-label="Strumenti del quaderno">
+        <div class="toolbox-top"><strong>Astuccio</strong><label class="mini-switch"><input data-readonly type="checkbox" role="switch"> Sola lettura</label></div>
+        <div class="tool-grid"><button type="button" data-tool="penna" class="active">Penna</button><button type="button" data-tool="evidenziatore">Evidenzia</button><button type="button" data-tool="sottolineatura">Sottolinea</button><button type="button" data-tool="gomma">Gomma</button><button type="button" data-tool="testo">Testo</button><button type="button" data-tool="linea">Riga</button><button type="button" data-tool="freccia">Freccia</button><button type="button" data-tool="cerchio">Cerchio</button><button type="button" data-tool="rettangolo">Quadrato</button><button type="button" data-tool="sposta">Sposta</button></div>
+        <div class="palette" data-palette aria-label="Colori"></div>
+        <div class="widths" role="group" aria-label="Spessore"><button type="button" data-width="2"><span class="dot thin"></span></button><button type="button" data-width="5" class="active"><span class="dot medium"></span></button><button type="button" data-width="10"><span class="dot thick"></span></button></div>
+        <div class="history-buttons"><button type="button" data-undo>↶ Annulla</button><button type="button" data-redo>↷ Ripeti</button></div>
+        <div id="notebook-music" class="music-palette" hidden>
+          <strong>Simboli musicali</strong>
+          <p class="music-hint">Scegli un segno, poi tocca il rigo dove metterlo. Con “Sposta” lo si sistema dopo.</p>
+          <div id="notebook-music-grid" class="music-grid"></div>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <dialog id="book-dialog">
+    <form method="dialog" id="book-form" class="dialog-form"><input id="edit-book-id" type="hidden"><div class="dialog-heading"><div><p class="eyebrow">Libro</p><h2>Modifica dettagli</h2></div><button type="button" data-dialog-close class="icon-button" aria-label="Chiudi">×</button></div><label>Titolo<input id="edit-book-title" required maxlength="120"></label><label>Materia<input id="edit-book-subject" required maxlength="60" list="subjects-list"></label><div class="dialog-actions"><button type="button" data-dialog-close class="button secondary">Annulla</button><button id="save-book" class="button primary" value="default">Salva modifiche</button></div></form>
+  </dialog>
+  <dialog id="notebook-dialog">
+    <form method="dialog" id="notebook-form" class="dialog-form"><div class="dialog-heading"><div><p class="eyebrow">Nuovo</p><h2>Crea quaderno</h2></div><button type="button" data-dialog-close class="icon-button" aria-label="Chiudi">×</button></div><label>Titolo<input id="new-notebook-title" required maxlength="80" placeholder="Es. Matematica"></label><label>Materia<input id="new-notebook-subject" required maxlength="60" list="subjects-list"></label><fieldset><legend>Tipo di foglio</legend><label class="choice-card"><input type="radio" name="paper-type" value="righe" checked><span class="paper-sample lined"></span><strong>Righe</strong></label><label class="choice-card"><input type="radio" name="paper-type" value="quadretti"><span class="paper-sample squared"></span><strong>Quadretti</strong></label><label class="choice-card"><input type="radio" name="paper-type" value="bianco"><span class="paper-sample blank"></span><strong>Bianco</strong></label><label class="choice-card"><input type="radio" name="paper-type" value="pentagramma"><span class="paper-sample staff"></span><strong>Pentagramma</strong></label><label class="choice-card"><input type="radio" name="paper-type" value="millimetrato"><span class="paper-sample graph"></span><strong>Millimetrato</strong></label></fieldset><div class="dialog-actions"><button type="button" data-dialog-close class="button secondary">Annulla</button><button class="button primary" value="default">Crea quaderno</button></div></form>
+  </dialog>
+  <dialog id="task-dialog">
+    <form method="dialog" id="task-form" class="dialog-form"><input id="edit-task-id" type="hidden"><input id="task-materia-id" type="hidden"><div class="dialog-heading"><div><p class="eyebrow">Promemoria</p><h2 id="task-dialog-title">Nuovo compito</h2></div><button type="button" data-dialog-close class="icon-button" aria-label="Chiudi">×</button></div><label>Materia<input id="task-subject" required maxlength="60" list="subjects-list"></label><label>Descrizione<textarea id="task-description" required maxlength="500" rows="4"></textarea></label><label>Consegna<input id="task-due" type="date" required></label><label>Collegamento facoltativo<select id="task-link"><option value="">Nessun collegamento</option></select></label><label id="task-link-page-row" hidden>Pagina<input id="task-link-page" type="number" min="1" value="1"></label><div class="photo-field"><span class="field-label">Foto della lavagna</span><div class="button-row"><label class="button secondary file-button"><input id="task-photo" type="file" accept="image/*" capture="environment" hidden>Scatta o scegli</label><button type="button" id="task-photo-remove" class="button secondary danger-text" hidden>Togli la foto</button></div><img id="task-photo-preview" alt="Foto del compito" hidden></div><div class="dialog-actions"><button type="button" data-dialog-close class="button secondary">Annulla</button><button class="button primary" value="default">Salva compito</button></div></form>
+  </dialog>
+  <datalist id="subjects-list"><option value="Italiano"><option value="Matematica"><option value="Geometria"><option value="Storia"><option value="Geografia"><option value="Inglese"><option value="Scienze"><option value="Musica"><option value="Arte"><option value="Tecnologia"></datalist>
+
+  <dialog id="giorno-dialog">
+    <div class="dialog-form">
+      <div class="dialog-heading"><div><p class="eyebrow" id="giorno-eyebrow">Scrivi un compito</p><h2 id="giorno-titolo"></h2></div><button type="button" data-dialog-close class="icon-button" aria-label="Chiudi">×</button></div>
+      <p id="giorno-nota" class="small-copy">Tocca la materia giusta e scrivi il compito.</p>
+      <div id="giorno-materie" class="giorno-materie"></div>
+      <div class="dialog-actions"><button type="button" data-dialog-close class="button secondary">Chiudi</button></div>
+    </div>
+  </dialog>
+
+  <dialog id="materia-libri-dialog">
+    <form method="dialog" id="materia-libri-form" class="dialog-form">
+      <div class="dialog-heading"><div><p class="eyebrow">Libri della materia</p><h2 id="materia-libri-titolo"></h2></div><button type="button" data-dialog-close class="icon-button" aria-label="Chiudi">×</button></div>
+      <p class="small-copy">Segna i libri che servono per questa materia. Si può cambiare quando vuoi.</p>
+      <div id="materia-libri-scelte" class="scelta-libri"></div>
+      <div class="dialog-actions"><button type="button" data-dialog-close class="button secondary">Annulla</button><button class="button primary" value="default">Salva i libri</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="bookmark-dialog">
+    <form method="dialog" id="bookmark-form" class="dialog-form">
+      <div class="dialog-heading"><div><p class="eyebrow">Segnalibro</p><h2 id="bookmark-dialog-title">Nuovo segnalibro</h2></div><button type="button" data-dialog-close class="icon-button" aria-label="Chiudi">×</button></div>
+      <p id="bookmark-dialog-page" class="small-copy"></p>
+      <label>Nota<input id="bookmark-note" maxlength="120" placeholder="Es. compito di matematica da fare"></label>
+      <div class="dialog-actions"><button type="button" data-dialog-close class="button secondary">Annulla</button><button class="button primary" value="default">Salva segnalibro</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="album-dialog">
+    <form method="dialog" id="album-form" class="dialog-form">
+      <div class="dialog-heading"><div><p class="eyebrow">Foto</p><h2>In quale album?</h2></div><button type="button" data-dialog-close class="icon-button" aria-label="Chiudi">×</button></div>
+      <p id="album-dialog-count" class="small-copy"></p>
+      <label>Album<select id="album-target"></select></label>
+      <label id="album-name-row">Nome del nuovo album<input id="album-name" maxlength="60" placeholder="Es. Gita a Venezia"></label>
+      <div class="dialog-actions"><button type="button" data-dialog-close class="button secondary">Annulla</button><button class="button primary" value="default">Metti qui le foto</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="photo-dialog" class="photo-dialog">
+    <div class="photo-viewer"><img id="photo-viewer-image" alt=""><div class="photo-viewer-bar"><strong id="photo-viewer-title"></strong><button type="button" data-dialog-close class="icon-button" aria-label="Chiudi">×</button></div></div>
+  </dialog>
+
+  <div id="progress-overlay" class="progress-overlay" hidden><div class="progress-dialog" role="status"><span class="spinner"></span><strong id="progress-title">Sto lavorando…</strong><progress id="progress-bar" max="1" value="0"></progress><span id="progress-detail"></span></div></div>
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

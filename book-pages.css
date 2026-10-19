@@ -1,0 +1,2 @@
+#align-book-pages{display:inline-flex;align-items:center;justify-content:center;white-space:normal}#lettore-pdf .page-controls{flex-wrap:wrap}#lettore-pdf #page-total{font-size:12px;max-width:260px;line-height:1.35}#lettore-pdf #page-number{width:65px}
+@media(max-width:600px){#align-book-pages{display:inline-flex!important;font-size:12px;padding:0 9px;min-height:36px}#lettore-pdf .page-controls label{flex-wrap:wrap}#lettore-pdf #page-total{max-width:170px}}

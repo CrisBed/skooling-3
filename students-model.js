@@ -1,0 +1,5 @@
+export const SCHOOLS={primary:'Scuola primaria',middle:'Scuola media',high:'Scuola superiore',other:'Altro percorso'};
+export const DEFAULT_REGISTRY={versione:1,students:[{id:'default',name:'Profilo iniziale',school:'middle'}]};
+export function newStudent(id,name,school){if(typeof id!=='string'||!/^[a-zA-Z0-9-]{1,90}$/.test(id)||typeof name!=='string'||!name.trim()||name.trim().length>60||typeof school!=='string'||!Object.hasOwn(SCHOOLS,school))throw Error('Controlla nome e percorso del profilo.');return {id,name:name.trim(),school};}
+export function validateRegistry(value){if(value?.versione!==1||!Array.isArray(value.students)||!value.students.length||value.students.length>30)throw Error('Elenco profili non valido.');const students=value.students.map(s=>newStudent(s.id,s.name,s.school));if(new Set(students.map(s=>s.id)).size!==students.length||!students.some(s=>s.id==='default'))throw Error('Elenco profili non valido.');return {versione:1,students};}
+export function databaseFor(id,registry){if(!validateRegistry(registry).students.some(s=>s.id===id))throw Error('Seleziona un profilo valido.');return id==='default'?'skooling3-db':'skooling3-student-'+id;}
