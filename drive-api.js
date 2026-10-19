@@ -2,7 +2,13 @@ const API='https://www.googleapis.com/drive/v3/files';
 export class DriveAPI {
  constructor(token,fetcher=globalThis.fetch.bind(globalThis)){this.token=token;this.fetcher=fetcher;this.cache=new Map();}
  async request(url,options={}){
-  const response=await this.fetcher(url,{...options,headers:{...options.headers,Authorization:`Bearer ${this.token}`},signal:AbortSignal.timeout(45000)});
+  let response;
+  // Only read requests may be retried: repeating an upload can create duplicates.
+  const reading=!options.method||options.method==='GET';
+  for(let attempt=0;;attempt++){
+   try{response=await this.fetcher(url,{...options,headers:{...options.headers,Authorization:`Bearer ${this.token}`},signal:AbortSignal.timeout(45000)});break;}
+   catch(error){if(!reading||attempt>=2||error.name!=='TypeError')throw error;await new Promise(resolve=>setTimeout(resolve,250*(attempt+1)));}
+  }
   if(response.status===401)throw Error('Accesso Google scaduto. Premi Ricollega Google.');
   if(!response.ok){
    let reason='';try{const body=await response.json();const codes=[...(body.error?.errors||[]).map(e=>e.reason),...(body.error?.details||[]).map(e=>e.reason)];reason=codes.find(c=>['insufficientPermissions','ACCESS_TOKEN_SCOPE_INSUFFICIENT','accessNotConfigured','SERVICE_DISABLED','domainPolicy','storageQuotaExceeded'].includes(c))||'';}catch{}

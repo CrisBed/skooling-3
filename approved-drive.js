@@ -4,18 +4,18 @@ export class ApprovedDrive {
  constructor(api,namespace){this.api=api;this.namespace=namespace;this.assets=null;}
  async find(kind){const q=new URLSearchParams({spaces:'appDataFolder',q:`trashed = false and appProperties has { key='skooling' and value='${this.namespace}-${kind}' }`,fields:'nextPageToken,files(id,name,size)',pageSize:'1000'});let page,files=[];do{if(page)q.set('pageToken',page);const data=await(await this.api.request(`${ROOT}?${q}`)).json();files.push(...(data.files||[]));page=data.nextPageToken;}while(page);return files;}
  async current(kind='approved'){
-  const files=await this.find(kind);if(files.length>1)throw Error('Trovate più copie principali su Drive. Nessuna è stata sostituita: serve confrontarle.');if(!files.length)return null;
-  const r=await this.api.request(`${ROOT}/${files[0].id}?alt=media`);const text=await r.text();if(text.length>40*1024*1024)throw Error('Archivio testuale troppo grande.');const etag=r.headers.get('ETag');
+  let files;try{files=await this.find(kind);}catch(error){error.message='elenco Drive: '+error.message;throw error;}if(files.length>1)throw Error('Trovate più copie principali su Drive. Nessuna è stata sostituita: serve confrontarle.');if(!files.length)return null;
+  let r,text;try{r=await this.api.request(`${ROOT}/${files[0].id}?alt=media`);text=await r.text();}catch(error){error.message='contenuto del file Drive: '+error.message;throw error;}if(text.length>40*1024*1024)throw Error('Archivio testuale troppo grande.');const etag=r.headers.get('ETag');
   return {id:files[0].id,etag,value:JSON.parse(text)};
  }
- async create(kind,value){const boundary='skooling_'+crypto.randomUUID();const metadata={name:`${this.namespace}-${kind}.json`,parents:['appDataFolder'],appProperties:{skooling:`${this.namespace}-${kind}`}};const body=new Blob([`--${boundary}\r\nContent-Type: application/json\r\n\r\n${JSON.stringify(metadata)}\r\n--${boundary}\r\nContent-Type: application/json\r\n\r\n`,JSON.stringify(value),`\r\n--${boundary}--`]);return(await this.api.request('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id',{method:'POST',headers:{'Content-Type':`multipart/related; boundary=${boundary}`},body})).json();}
+ async create(kind,value){const boundary='skooling_'+crypto.randomUUID();const metadata={name:`${this.namespace}-${kind}.json`,parents:['appDataFolder'],appProperties:{skooling:`${this.namespace}-${kind}`}};const body=[`--${boundary}\r\nContent-Type: application/json\r\n\r\n${JSON.stringify(metadata)}\r\n--${boundary}\r\nContent-Type: application/json\r\n\r\n`,JSON.stringify(value),`\r\n--${boundary}--`].join('');return(await this.api.request('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id',{method:'POST',headers:{'Content-Type':`multipart/related; boundary=${boundary}`},body})).json();}
  async replace(file,value){if(!file?.etag||file.etag.startsWith('W/'))throw Error('Drive non fornisce una revisione verificabile. Invio sospeso per proteggere il lavoro: nessuna copia è stata sovrascritta.');
   const r=await this.api.request(`https://www.googleapis.com/upload/drive/v3/files/${encodeURIComponent(file.id)}?uploadType=media`,{method:'PATCH',headers:{'Content-Type':'application/json','If-Match':file.etag},body:JSON.stringify(value)});return r.json();
  }
  async verifyConcurrency(){
   if(this.concurrencyVerified)return;
   const kind='revision-check-'+crypto.randomUUID();let file,step='creazione del file di prova';
-  try{await this.create(kind,{test:1});step='lettura del file di prova';file=await this.current(kind);if(!file)throw Error('Verifica Drive non completata.');
+  try{const created=await this.create(kind,{test:1});if(created?.id)file={id:created.id};step='lettura del file di prova';const verified=await this.current(kind);if(verified)file=verified;else throw Error('File di prova non ancora disponibile.');if(!file)throw Error('Verifica Drive non completata.');
    step='aggiornamento del file di prova';await this.replace(file,{test:2});
    step='blocco della revisione vecchia';let refused=false;try{await this.replace(file,{test:3});}catch(error){if(error.status===412)refused=true;else throw error;}
    if(!refused)throw Error('Drive non ha bloccato una revisione vecchia nella prova di sicurezza. Invio sospeso: serve un servizio che garantisca questo controllo. Nessun lavoro è stato sostituito.');
