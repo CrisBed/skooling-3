@@ -24,8 +24,8 @@ export class ApprovedDrive {
   const kind='revision-check-'+crypto.randomUUID();let file,step='creazione del file di prova';
   try{const created=await this.create(kind,{test:1});if(created?.id)file={id:created.id};step='lettura del file di prova';const verified=await this.current(kind);if(verified)file=verified;else throw Error('File di prova non ancora disponibile.');if(!file)throw Error('Verifica Drive non completata.');
    step='aggiornamento del file di prova';await this.replace(file,{test:2});
-   step='blocco della revisione vecchia';let refused=false;try{await this.replace(file,{test:3});}catch(error){if(error.status===412)refused=true;else throw error;}
-   if(!refused)throw Error('Drive non ha bloccato una revisione vecchia nella prova di sicurezza. Invio sospeso: serve un servizio che garantisca questo controllo. Nessun lavoro è stato sostituito.');
+   step='controllo dell’aggiornamento';const updated=await this.current(kind);if(updated?.value?.test!==2)throw Error('Il contenuto aggiornato non è stato verificato.');if(updated.etag===file.etag)throw Error('Il riferimento di revisione Google non cambia dopo l’aggiornamento del contenuto.');step='blocco della revisione vecchia';let refused=false;try{await this.replace(file,{test:3});}catch(error){if(error.status===412)refused=true;else throw error;}
+   const final=await this.current(kind);if(!refused||final?.value?.test!==2||final?.etag!==updated.etag)throw Error('Drive non ha bloccato una revisione vecchia nella prova di sicurezza. Invio sospeso: serve un servizio che garantisca questo controllo. Nessun lavoro è stato sostituito.');
    this.concurrencyVerified=true;
   }catch(error){error.message=`${step}: ${error.message}`;throw error;}finally{if(file)await this.remove(file).catch(()=>{});}
  }
