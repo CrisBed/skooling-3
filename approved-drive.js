@@ -14,13 +14,13 @@ export class ApprovedDrive {
  }
  async verifyConcurrency(){
   if(this.concurrencyVerified)return;
-  const kind='revision-check-'+crypto.randomUUID();let file;
-  try{await this.create(kind,{test:1});file=await this.current(kind);if(!file)throw Error('Verifica Drive non completata.');
-   await this.replace(file,{test:2});
-   let refused=false;try{await this.replace(file,{test:3});}catch(error){if(error.status===412)refused=true;else throw error;}
+  const kind='revision-check-'+crypto.randomUUID();let file,step='creazione del file di prova';
+  try{await this.create(kind,{test:1});step='lettura del file di prova';file=await this.current(kind);if(!file)throw Error('Verifica Drive non completata.');
+   step='aggiornamento del file di prova';await this.replace(file,{test:2});
+   step='blocco della revisione vecchia';let refused=false;try{await this.replace(file,{test:3});}catch(error){if(error.status===412)refused=true;else throw error;}
    if(!refused)throw Error('Drive non ha bloccato una revisione vecchia nella prova di sicurezza. Invio sospeso: serve un servizio che garantisca questo controllo. Nessun lavoro è stato sostituito.');
    this.concurrencyVerified=true;
-  }finally{if(file)await this.remove(file).catch(()=>{});}
+  }catch(error){error.message=`${step}: ${error.message}`;throw error;}finally{if(file)await this.remove(file).catch(()=>{});}
  }
  async remove(file){await this.api.request(`${ROOT}/${encodeURIComponent(file.id)}`,{method:'DELETE'});}
  async uploadChunk(blob,hash){if(!this.assets)this.assets=new Map((await this.find('media')).map(f=>[f.name,f]));if(this.assets.has(hash))return this.assets.get(hash).id;
