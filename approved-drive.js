@@ -5,8 +5,15 @@ export class ApprovedDrive {
  async find(kind){const q=new URLSearchParams({spaces:'appDataFolder',q:`trashed = false and appProperties has { key='skooling' and value='${this.namespace}-${kind}' }`,fields:'nextPageToken,files(id,name,size)',pageSize:'1000'});let page,files=[];do{if(page)q.set('pageToken',page);const data=await(await this.api.request(`${ROOT}?${q}`)).json();files.push(...(data.files||[]));page=data.nextPageToken;}while(page);return files;}
  async current(kind='approved'){
   let files;try{files=await this.find(kind);}catch(error){error.message='elenco Drive: '+error.message;throw error;}if(files.length>1)throw Error('Trovate più copie principali su Drive. Nessuna è stata sostituita: serve confrontarle.');if(!files.length)return null;
-  let r,text;try{r=await this.api.request(`${ROOT}/${files[0].id}?alt=media`);text=await r.text();}catch(error){error.message='contenuto del file Drive: '+error.message;throw error;}if(text.length>40*1024*1024)throw Error('Archivio testuale troppo grande.');const etag=r.headers.get('ETag');
-  return {id:files[0].id,etag,value:JSON.parse(text)};
+  // Read a metadata ETag on both sides of the content download. Media responses
+  // do not reliably expose ETag to browsers; a later ETag must never label older content.
+  const metadata=async()=>{const r=await this.api.request(`https://www.googleapis.com/drive/v2/files/${encodeURIComponent(files[0].id)}?fields=id,etag`);return r.json();};
+  let r,text,before,after;
+  try{before=await metadata();r=await this.api.request(`${ROOT}/${files[0].id}?alt=media`);text=await r.text();after=await metadata();}
+  catch(error){error.message='contenuto o revisione del file Drive: '+error.message;throw error;}
+  if(!before.etag||before.etag.startsWith('W/')||before.etag!==after.etag)throw Error('Revisione Drive assente o cambiata durante la lettura. Nessun dato sostituito: riprova.');
+  if(text.length>40*1024*1024)throw Error('Archivio testuale troppo grande.');
+  return {id:files[0].id,etag:before.etag,value:JSON.parse(text)};
  }
  async create(kind,value){const boundary='skooling_'+crypto.randomUUID();const metadata={name:`${this.namespace}-${kind}.json`,parents:['appDataFolder'],appProperties:{skooling:`${this.namespace}-${kind}`}};const body=[`--${boundary}\r\nContent-Type: application/json\r\n\r\n${JSON.stringify(metadata)}\r\n--${boundary}\r\nContent-Type: application/json\r\n\r\n`,JSON.stringify(value),`\r\n--${boundary}--`].join('');return(await this.api.request('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id',{method:'POST',headers:{'Content-Type':`multipart/related; boundary=${boundary}`},body})).json();}
  async replace(file,value){if(!file?.etag||file.etag.startsWith('W/'))throw Error('Drive non fornisce una revisione verificabile. Invio sospeso per proteggere il lavoro: nessuna copia è stata sovrascritta.');
