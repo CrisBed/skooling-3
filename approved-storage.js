@@ -6,8 +6,14 @@ export function replaceApproved(database,names,expected,incoming,state){return n
  tx.oncomplete=()=>resolve();tx.onerror=tx.onabort=()=>reject(error||tx.error||Error('Aggiornamento interrotto.'));
  for(const name of names){const req=tx.objectStore(name).getAll();req.onsuccess=()=>{current[name]=req.result;if(--remaining)return;try{
   if(canonical(comparable(current))!==canonical(comparable(expected)))throw Error('Il lavoro locale è cambiato durante il trasferimento. Riprova.');
-  // Preserve the previous personal archive once, atomically with the first pull.
-  if(!current.impostazioni.some(r=>r.id==='sync-approved-state'))tx.objectStore('recuperosync').put({id:'prima-sincronizzazione',data:new Date().toISOString(),stores:portable(current)});
+  const incomingBooks=new Set(incoming.libri.map(row=>row.id));
+  if(current.libri.some(row=>!incomingBooks.has(row.id)))throw Error('Qui ci sono libri assenti dalla copia dell’iPad. Aggiornamento fermato per conservare i PDF e le scritte. Esporta una copia completa prima di riconciliare le due librerie.');
+  // The first journal pull is a migration even if an older sync state exists.
+  // Keep every earlier recovery; create this copy in the same transaction.
+  const previousState=current.impostazioni.find(r=>r.id==='sync-approved-state')?.valore;
+  if(!previousState||(state.protocol==='journal1'&&previousState.protocol!=='journal1')){
+   tx.objectStore('recuperosync').add({id:'prima-sincronizzazione-'+crypto.randomUUID(),data:new Date().toISOString(),protocol:state.protocol||'legacy',stores:portable(current)});
+  }
   for(const name of names){const store=tx.objectStore(name),locals=new Map(current[name].map(r=>[r.id,r]));
    if(name==='libri'){for(const row of incoming[name]){const local=locals.get(row.id);store.put({...row,...Object.fromEntries(Object.entries(local||{}).filter(([,v])=>v instanceof Blob))});}continue;}
    if(name==='impostazioni'){for(const row of current[name])if(!localOnly(row.id))store.delete(row.id);for(const row of incoming[name])if(!localOnly(row.id))store.put(row);store.put({id:'sync-approved-state',valore:state});continue;}

@@ -1,3 +1,6 @@
+import {MathPractice} from './math-practice.js';
+import {inspectBackup} from './backup-inspect.js';
+import {createArchiveInventory} from './archive-ui.js';
 import {Agenda} from './agenda.js';
 import {initMenu} from './navigation.js';
 import { renderGradebook } from './gradebook.js';
@@ -23,6 +26,7 @@ const state = { books: [], tasks: [], taskFilter: 'todo', coverUrls: [], fotoCom
 let notebooks;
 let album;
 let orario;
+let archiveView;
 let toastTimer;
 
 export function notify(text, error = false) {
@@ -48,6 +52,8 @@ export function hideProgress() {
 function showReview(){return renderReview(document.querySelector('#ripasso'),{notify,refresh:showReview});}
 
 export function navigate(view, options={}) {
+  if(view!=='matematica')MathPractice.leave().catch(e=>notify(e.message,true));
+  if(view==='matematica')MathPractice.render(document.querySelector('#matematica')).catch(e=>notify(e.message,true));
   if(view==='agenda') Agenda.render().catch(error=>notify(error.message,true));
   if(view==='voti') renderGradebook(document.querySelector('#voti'),{...options,notify}).catch(error=>notify(error.message,true));
   if(view==='ripasso') showReview().catch(error=>notify(error.message,true));
@@ -66,7 +72,7 @@ export function navigate(view, options={}) {
   if (view === 'orario') orario.renderEditor();
   if (view === 'materie-libri') orario.renderLibriPerMateria();
   if (view === 'album') album.renderList();
-  if (view === 'impostazioni') updateStorage();
+  if (view === 'impostazioni') {updateStorage();archiveView?.refresh(DB).catch(e=>notify(e.message,true));}
   document.querySelector('#main-content').scrollTo?.(0, 0);
   verificaAggiornamentoInSospeso();
 }
@@ -181,7 +187,7 @@ function makeBookCard(book) {
     state.coverUrls.push(url);
     cover = `<img src="${url}" alt="Copertina di ${escapeHtml(book.titolo)}">`;
   }
-  article.innerHTML = `<button type="button" class="book-open"><div class="book-cover">${cover}</div><div class="book-info"><strong>${escapeHtml(book.titolo)}</strong><span>${escapeHtml(book.materia)} · Riprendi da pagina ${book.ultimaPagina || 1}</span></div></button><button type="button" class="card-menu" aria-label="Azioni per ${escapeHtml(book.titolo)}">⋯</button><div class="card-actions" hidden><button type="button" data-edit>Rinomina e materia</button><button type="button" data-delete class="danger-text">Elimina libro</button></div>`;
+  article.innerHTML = `<button type="button" class="book-open"><div class="book-cover">${cover}</div><div class="book-info"><strong>${escapeHtml(book.titolo)}</strong><span>${escapeHtml(book.materia)} · ${book.blob instanceof Blob?'Disponibile qui · pagina '+(book.ultimaPagina||1):'Aggiungi il PDF · scritte conservate'}</span></div></button><button type="button" class="card-menu" aria-label="Azioni per ${escapeHtml(book.titolo)}">⋯</button><div class="card-actions" hidden><button type="button" data-edit>Rinomina e materia</button><button type="button" data-delete class="danger-text">Elimina libro</button></div>`;
   article.querySelector('.book-open').addEventListener('click', () => book.blob instanceof Blob ? openBook(book.id, book.ultimaPagina) : attachBookPDF(book));
   if (!(book.blob instanceof Blob)) article.querySelector('.book-info span').textContent = 'Collega PDF su questo dispositivo';
   article.querySelector('.card-menu').addEventListener('click', () => { const menu = article.querySelector('.card-actions'); menu.hidden = !menu.hidden; });
@@ -537,8 +543,8 @@ function bindSettings() {
   const backupMode = document.querySelector('#backup-mode');
   backupMode.addEventListener('change', () => {
     document.querySelector('#backup-mode-copy').textContent = backupMode.value === 'completo'
-      ? 'Conserva tutti i dati, compresi i PDF dei libri senza scritte. Utile prima di cambiare tablet.'
-      : 'Conserva tutti i quaderni, le scritte, i materiali, i risultati e le routine. Include i PDF dei libri annotati; gli altri libri vanno reimportati dopo il ripristino.';
+      ? 'Per portare tutto nella 3.0 o su un altro tablet: comprende tutti i PDF presenti e il tuo lavoro.'
+      : 'Per proteggere il lavoro quotidiano: comprende quaderni, scritte e materiali. Dei libri include solo quelli annotati, non tutta la libreria.';
   });
   document.querySelector('#export-backup').addEventListener('click', async () => {
     const mode = backupMode.value;
@@ -555,13 +561,17 @@ function bindSettings() {
   document.querySelector('#import-backup').addEventListener('change', async (event) => {
     const [file] = event.target.files;
     if (!file) return;
-    if (!confirm('Importando il backup sostituirai i dati presenti su questo dispositivo. Continuare?')) { event.target.value = ''; return; }
+    let preview;try{preview=await inspectBackup(file);}catch(error){notify(error.message,true);event.target.value='';return;}
+    if (!confirm(preview.summary+'\n\nQuaderni, attività e scritte presenti nella 3.0 verranno sostituiti da quelli della copia. La 2.0 resta separata. Vuoi continuare?')) { event.target.value = ''; return; }
     document.dispatchEvent(new Event('skooling:backup-importing'));
     showProgress('Importo il backup', 'Tieni aperta l’app durante l’importazione.', 0);
     try {
       await DB.importBackup(file, (value) => showProgress('Importo il backup', value < 0.85 ? 'Leggo e controllo libri e quaderni…' : 'Completo il ripristino…', value));
-      notify('Backup importato. Skooling si riavvia.');
-      setTimeout(() => location.reload(), 900);
+      if(DB.session?.temporary){
+        await orario.carica();await Promise.all([renderLibrary(),notebooks.renderList(),renderTasks(),album.renderList(),updateStorage(),archiveView?.refresh(DB)]);
+        document.dispatchEvent(new Event('skooling:sync-applied'));
+        notify('Copia aperta in questa sessione temporanea. Non chiudere: usa Invia all’iPad principale se vuoi proporre questo lavoro.');
+      }else{notify('Copia importata. Riapro il tuo archivio.');setTimeout(() => location.reload(), 900);}
     } catch (error) {
       notify(error.message, true);
     } finally {
@@ -705,6 +715,9 @@ async function start() {
     orario.renderProssimiGiorni();
     await Promise.all([renderLibrary(), notebooks.renderList(), renderTasks(), album.renderList(), updateStorage()]);
     Tutor.init({ navigate, notify });
+    MathPractice.init({navigate,notify});
+    archiveView=createArchiveInventory(document.querySelector('#archive-inventory'));
+    await archiveView.refresh(DB);
     Studio.init({ openTutor: topic => Tutor.open(topic), navigate, notify, openBook, openNotebook: (id, page) => notebooks.open(id, page),
       openStudy: async (topic) => {
         document.body.classList.add('study-split');
@@ -729,7 +742,7 @@ async function start() {
       if (active) navigate(active);
     });
     await Agenda.init({navigate,newHomework:()=>apriNuovoCompito(),editHomework:async id=>editTask(await DB.get('compiti',id)),newExam:()=>navigate('voti',{addNew:true}),editExam:id=>navigate('voti',{editId:id})});
-    navigate('tutor');
+    navigate('oggi');
     await registerServiceWorker();
   } catch (error) {
     notify(error.message || 'Skooling non riesce ad avviarsi. Ricarica la pagina.', true);

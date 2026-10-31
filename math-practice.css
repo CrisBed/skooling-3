@@ -1,0 +1,62 @@
+#matematica .math-practice{max-width:900px;margin:24px auto 50px;color:#22312c;line-height:1.65}
+#matematica .math-heading{max-width:760px;margin-bottom:24px}
+#matematica h1{margin:8px 0 16px;font-size:clamp(30px,4vw,44px);line-height:1.18}
+#matematica h1:focus{outline:none}
+#matematica h2{font-size:clamp(22px,3vw,28px);line-height:1.4;margin:0 0 18px}
+#matematica h3{font-size:20px;margin:0 0 10px}
+#matematica p{margin:12px 0}
+#matematica .math-heading>p:last-child{font-size:18px;color:#52645b}
+#matematica .math-card{padding:clamp(20px,4vw,34px);background:#fffef8;border:1px solid #d3dfd2;border-radius:25px}
+#matematica .math-card p,#matematica .math-card dd,#matematica .math-card li{font-size:18px}
+#matematica .math-source,#matematica .math-caption,#matematica .math-storage-note{color:#53675c;font-size:15px!important}
+#matematica .math-source{max-width:600px}
+#matematica .math-small-label{font-size:13px!important;font-weight:800;letter-spacing:.08em;color:#166454}
+#matematica .math-resume-note,#matematica .math-review-date{background:#e9f0e4;border-radius:15px;padding:16px}
+#matematica .math-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:26px}
+#matematica .math-actions .button{min-height:54px;padding:14px 20px;font-size:17px;line-height:1.4;border-radius:16px;white-space:normal;max-width:100%}
+#matematica .math-actions .primary{background:#166454;color:#fff}
+#matematica .math-actions .secondary{background:#e7eee3;color:#174d3e}
+#matematica :is(button,input,textarea,select):focus-visible{outline:3px solid #315db4;outline-offset:4px}
+#matematica :is(button,input,textarea,select):disabled{opacity:.7}
+#matematica .math-step{font-size:16px;color:#52645b;margin-bottom:5px}
+#matematica .math-progress{display:block;width:100%;height:9px;margin:0 0 24px;accent-color:#166454;border:0;border-radius:9px;overflow:hidden}
+#matematica .math-progress::-webkit-progress-bar{background:#dce5d6}
+#matematica .math-progress::-webkit-progress-value{background:#166454}
+#matematica .math-pizza-pair{display:grid;grid-template-columns:minmax(0,1fr) 32px minmax(0,1fr);align-items:center;gap:12px;max-width:650px;margin:0 auto 24px}
+#matematica .math-pizza{display:flex;flex-direction:column;align-items:center;margin:0;min-width:0}
+#matematica .math-pizza svg{display:block;width:min(100%,220px);height:auto}
+#matematica .math-slice-filled{fill:#81b497;stroke:#294a38;stroke-width:2}
+#matematica .math-slice-empty{fill:#fff9e9;stroke:#294a38;stroke-width:2}
+#matematica .math-pizza-edge{fill:none;stroke:#294a38;stroke-width:3}
+#matematica .math-pizza figcaption{text-align:center;line-height:1.45;max-width:230px}
+#matematica .math-pizza figcaption strong{font-size:29px;display:block;color:#174d3e}
+#matematica .math-pizza figcaption span{font-size:15px;display:block;margin-top:5px}
+#matematica .math-equals{text-align:center;font-size:34px;align-self:center;padding-bottom:66px}
+#matematica .math-key-idea{padding:15px 18px;background:#edf2e8;border-radius:16px}
+#matematica .math-definitions{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:24px 0 0}
+#matematica .math-definitions>div{background:#f4f2e7;padding:16px;border-radius:16px}
+#matematica .math-definitions dt{font-size:19px;font-weight:800}
+#matematica .math-definitions dd{margin:5px 0 0}
+#matematica .math-question-layout{display:grid;grid-template-columns:minmax(140px,230px) minmax(0,1fr);gap:30px;align-items:start}
+#matematica .math-question-layout form{min-width:0}
+#matematica .math-choices{display:flex;gap:14px;border:0;padding:0;margin:0 0 18px;flex-wrap:wrap}
+#matematica .math-choices legend{font-size:18px;font-weight:700;margin-bottom:12px}
+#matematica .math-choice{display:flex;align-items:center;gap:12px;min-height:65px;min-width:110px;border:2px solid #bdcdbb;border-radius:16px;padding:12px 20px;cursor:pointer;background:#fffef8}
+#matematica .math-choice:has(input:checked){background:#e3efdf;border-color:#166454}
+#matematica .math-choice input{width:23px;height:23px;accent-color:#166454;flex:none;margin:0}
+#matematica .math-choice span{font-size:28px;font-weight:750}
+#matematica .math-answer-label,#matematica .math-reflection-label,#matematica .math-history-label{display:block;font-size:18px;font-weight:750}
+#matematica :is(.math-answer-label input,.math-reflection-label textarea,.math-history-label select){display:block;box-sizing:border-box;min-width:0;max-width:100%;width:100%;margin-top:12px;min-height:56px;border:2px solid #bdcdbb;border-radius:14px;background:#fff;color:#22312c;padding:14px;font:inherit;font-weight:400}
+#matematica .math-answer-label input{max-width:230px;font-size:26px}
+#matematica .math-reflection-label textarea{resize:vertical;line-height:1.65}
+#matematica .math-history-label{margin-bottom:26px}
+#matematica .math-feedback p{margin:16px 0 0}
+#matematica .math-feedback-correct{border-left:4px solid #267454;padding-left:14px}
+#matematica .math-hints{margin:18px 0 0;padding:15px 18px 15px 38px;background:#fff3d9;border-radius:16px}
+#matematica .math-hints li+li{margin-top:10px}
+#matematica .math-learned{padding-left:26px}
+#matematica .math-learned li{padding-left:4px;margin:12px 0}
+#matematica .math-saved-thought{background:#f2f0e6;padding:20px;border-radius:17px;margin:24px 0;overflow-wrap:anywhere;white-space:pre-wrap}
+#matematica .math-saved-thought small{font-size:14px;color:#53675c}
+#matematica .math-storage-note{padding:10px 4px;max-width:760px;overflow-wrap:anywhere}
+@media(max-width:650px){#matematica .math-question-layout{grid-template-columns:minmax(0,1fr);gap:20px}#matematica .math-question-layout>.math-pizza{max-width:200px;margin:auto}#matematica .math-definitions{grid-template-columns:minmax(0,1fr)}#matematica .math-pizza-pair{gap:2px;grid-template-columns:minmax(0,1fr) 24px minmax(0,1fr)}#matematica .math-pizza figcaption span{font-size:13px}#matematica .math-equals{font-size:28px}#matematica .math-actions .button{flex:1 1 200px}#matematica .math-practice{margin-top:16px}#matematica .math-card{border-radius:20px}}
