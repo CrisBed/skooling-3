@@ -1,3 +1,4 @@
+import {replacePageAnnotations} from './annotation-storage.js';
 import {readBackup} from './backup-reader.js';
 import {installDraftSession} from './draft-session.js';
 import {isIPad,deviceIdentity} from './device-policy.js';
@@ -223,6 +224,7 @@ export function selectBackupBooks(books, annotations, mode = 'completo') {
 }
 
 export const DB = {
+  async replaceAnnotations(bookId,page,elements){return replacePageAnnotations(await openDatabase(),bookId,page,elements);},
   async replaceApproved(expected,incoming,state){return replaceApproved(await openDatabase(),STORE_NAMES,expected,incoming,state);},
   async putIfUnchanged(storeName, value, expected) {
     const database = await openDatabase();
@@ -349,7 +351,7 @@ for(const method of ['put','putMany','putIfUnchanged','saveMindMap']) {
 }
 async function importVolatile(file,onProgress=()=>{}){
  const data=Object.fromEntries(STORE_NAMES.map(n=>[n,[]])),seen=new Set();
- await readBackup(file,{requiredStores:STORE_NAMES_STORICI,onProgress,onRow:async(name,row)=>{if(STORE_NAMES.includes(name)&&!(name==='impostazioni'&&row.id.startsWith('sync-'))){const key=JSON.stringify([name,row.id]);if(seen.has(key))throw Error('Il backup contiene voci duplicate. Nessuna prova è stata sostituita.');seen.add(key);data[name].push(row);}}});
- return data;
+ const metadata=await readBackup(file,{requiredStores:STORE_NAMES_STORICI,onProgress,onRow:async(name,row)=>{if(STORE_NAMES.includes(name)&&!(name==='impostazioni'&&row.id.startsWith('sync-'))){const key=JSON.stringify([name,row.id]);if(seen.has(key))throw Error('Il backup contiene voci duplicate. Nessuna prova è stata sostituita.');seen.add(key);data[name].push(row);}}});
+ Object.defineProperty(data,'backupMetadata',{value:metadata});return data;
 }
 if(typeof window!=='undefined')installDraftSession(DB,{enabled:!isIPad()||localStorage.getItem(DB_NAME+'-secondary')==='1',deferTracking:true,lockName:DB_NAME+'-approved-transfer',stores:STORE_NAMES,snapshot:canonical,importFile:importVolatile});

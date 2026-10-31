@@ -1,3 +1,4 @@
+import {createAnnotationSaveQueue} from './annotation-storage.js';
 import {createNumbering,printedToPhysical,physicalLabel} from './book-pages.js';
 // Lettore PDF basato sulla copia locale di PDF.js.
 import * as pdfjsLib from './vendor/pdf.mjs';
@@ -17,8 +18,6 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = './vendor/pdf.worker.mjs';
 // di fondo piu' un livello in primo piano ritagliato da una maschera CCITT.
 // La cartella finisce con la barra: PDF.js ci attacca dietro il nome del file.
 const WASM_PDFJS = './vendor/';
-
-function waitFrame() { return new Promise((resolve) => requestAnimationFrame(resolve)); }
 
 export async function extractPdfCover(blob) {
   const task = pdfjsLib.getDocument({ data: await blob.arrayBuffer(), wasmUrl: WASM_PDFJS });
@@ -69,8 +68,7 @@ class Reader {
     this.pinch = null;
     this.lastTap = 0;
     this.ultimoTocco = 0;
-    this.annotationSaveToken = 0;
-    this.annotationSaveToken2 = 0;
+    this.annotationSaves = createAnnotationSaveQueue((bookId,page,elements) => DB.replaceAnnotations(bookId,page,elements));
     // Un disegno di pagina alla volta. PDF.js rifiuta due render sullo stesso
     // canvas, quindi ogni richiesta aspetta che la precedente abbia finito di
     // liberarlo; il numero dice quale richiesta è l'ultima arrivata.
@@ -91,12 +89,12 @@ class Reader {
     const gestoTocco = (phase, event, touches) => this.handleTouchGesture(phase, event, touches);
     this.drawing = new DrawingSurface(this.annotationCanvas, {
       gesto,
-      onChange: (elements) => this.saveAnnotations(0, elements),
+      onChange: (elements) => { this.saveAnnotations(0, elements).catch(() => {}); },
       onTouchGesture: gestoTocco,
     });
     this.drawing2 = new DrawingSurface(this.annotationCanvas2, {
       gesto,
-      onChange: (elements) => this.saveAnnotations(1, elements),
+      onChange: (elements) => { this.saveAnnotations(1, elements).catch(() => {}); },
       onTouchGesture: gestoTocco,
     });
     // Un unico astuccio comanda tutte e due le pagine, come nei quaderni.
@@ -177,6 +175,8 @@ class Reader {
     // apertura lavora ne arriva un'altra, o una chiusura, questa si ferma senza
     // toccare più niente: lo schermo appartiene all'ultima arrivata.
     const sessione = ++this.sessione;
+    await this.annotationSaves.flush();
+    if(sessione!==this.sessione)return;
     const libro = await DB.get('libri', bookId);
     if (sessione !== this.sessione) return;
     if (!libro) throw new Error('Questo libro non è più nella libreria.');
@@ -241,6 +241,10 @@ class Reader {
   // se lo vedrebbe azzerare sotto le mani a chiusura finita. È esattamente
   // quello che succedeva uscendo e rientrando di fretta da un libro pesante.
   async close() {
+    if(this.annotationSaves.needsFlush){
+      const closingSession=this.sessione;
+      return this.annotationSaves.flush().then(()=>{if(closingSession===this.sessione)return this.close();}).catch(()=>{});
+    }
     this.sessione += 1;
     const task = this.staccaDocumento();
     this.book = null;
@@ -299,6 +303,9 @@ class Reader {
 
   async goTo(number,{printedTarget=null}={}) {
     if (!this.pdf) return;
+    const session=this.sessione;
+    await this.annotationSaves.flush();
+    if(session!==this.sessione||!this.pdf)return;
     this.requestedPageNumber=printedTarget;
     const next = this.allinea(Math.max(1, Math.min(this.pdf.numPages, Math.round(number || 1))));
     if (next === this.pageNumber && this.canvas.width) {
@@ -408,6 +415,8 @@ class Reader {
         ? Math.max(200, (this.scroll.clientWidth - 56 - 18) / 2)
         : Math.max(280, this.scroll.clientWidth - 56);
       this.pagesBox.style.transform = '';
+      await this.annotationSaves.flush();
+      if(corsa!==this.renderCorsa||!this.pdf)return;
       const annotations = await DB.getAll('annotazioni');
       await this.renderOne(0, this.pageNumber, available, annotations);
       if (destra) await this.renderOne(1, destra, available, annotations);
@@ -600,6 +609,24 @@ class Reader {
     }
   }
 
+  offerAnnotationRetry() {
+    let button=this.root.querySelector('#reader-save-retry');
+    if(!button){
+      button=document.createElement('button');button.id='reader-save-retry';button.type='button';button.className='small-button';button.textContent='Riprova salvataggio';
+      button.addEventListener('click',async()=>{
+        button.disabled=true;
+        try{
+          await this.annotationSaves.retry();button.hidden=true;
+          document.dispatchEvent(new CustomEvent('skooling:message',{detail:{text:DB.session?.temporary?'Annotazioni recuperate nelle prove temporanee di questa apertura.':'Annotazioni salvate su questo dispositivo.'}}));
+        }catch{
+          document.dispatchEvent(new CustomEvent('skooling:message',{detail:{text:'Il salvataggio non è ancora riuscito. I segni restano nella pagina aperta. Premi Riprova salvataggio.',error:true}}));
+        }finally{button.disabled=false;}
+      });
+      this.root.querySelector('.workspace-actions').append(button);
+    }
+    button.hidden=false;
+  }
+
   // Salva le annotazioni della pagina toccata: 0 = sinistra, 1 = destra.
   async saveAnnotations(offset, elements) {
     if (!this.book || !this.pdf) return;
@@ -608,13 +635,17 @@ class Reader {
     // il totale: a doppia pagina aperta sulla copertina la 2 esiste ma sta
     // nella coppia dopo, e un segno finito li' la sporcherebbe.
     if (offset && page !== this.destra()) return;
-    const chiave = offset ? 'annotationSaveToken2' : 'annotationSaveToken';
-    const token = ++this[chiave];
     const bookId = this.book.id;
-    await waitFrame();
-    if (token !== this[chiave]) return;
-    await DB.deleteWhere('annotazioni', (item) => item.idLibro === bookId && item.pagina === page);
-    await DB.putMany('annotazioni', elements.map((item) => ({ ...item, idLibro: bookId, pagina: page })));
+    const shown = Number((offset ? this.pageWrap2 : this.pageWrap).dataset.pagina);
+    const actualPage = Number.isInteger(shown) && shown > 0 ? shown : page;
+    try {
+      await this.annotationSaves.save(bookId, actualPage, elements);
+      const retry=this.root.querySelector('#reader-save-retry');if(retry&&!this.annotationSaves.needsFlush)retry.hidden=true;
+    } catch (error) {
+      this.offerAnnotationRetry();
+      document.dispatchEvent(new CustomEvent('skooling:message', {detail:{text:'Annotazioni non salvate. I segni restano nella pagina aperta. Premi Riprova salvataggio.', error:true}}));
+      throw error;
+    }
   }
 
   buildThumbnails() {
