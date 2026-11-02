@@ -1,0 +1,23 @@
+.tool-grid [data-shape-picker] { display: flex; align-items: center; justify-content: center; gap: 6px; }
+.tool-grid [data-shape-picker] svg { width: 23px; height: 23px; flex: none; }
+.shape-picker { box-sizing: border-box; width: min(660px, calc(100% - 28px)); max-height: 90vh; max-height: calc(100dvh - 28px); margin: auto; padding: 22px; border: 0; border-radius: 24px; color: var(--ink, #172340); background: #fff; box-shadow: 0 24px 90px rgb(19 34 65 / 25%); overflow: auto; overscroll-behavior: contain; }
+.shape-picker::backdrop { background: rgb(16 30 54 / 45%); }
+.shape-picker-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
+.shape-picker-head h2 { margin: 0 0 6px; font-size: 24px; }
+.shape-picker-head p { margin: 0; color: var(--muted, #536078); font-size: 14px; line-height: 1.4; }
+.shape-picker-head button { flex: none; min-height: 44px; }
+.shape-picker-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(105px, 1fr)); gap: 10px; }
+.shape-choice { min-width: 0; min-height: 94px; padding: 10px 6px; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 7px; border: 2px solid #e6ecf7; border-radius: 17px; color: #30496e; background: #f8faff; font: inherit; font-size: 13px; font-weight: 650; line-height: 1.2; text-align: center; touch-action: manipulation; cursor: pointer; }
+.shape-choice svg { width: 39px; height: 39px; flex: none; }
+.shape-choice:hover { background: #edf3ff; border-color: #bacdf7; }
+.shape-choice.active { color: #1d4ec9; border-color: #2457d6; background: #eaf0ff; }
+.shape-choice:focus-visible { outline: 3px solid #2457d6; outline-offset: 2px; }
+@media (max-width: 480px) {
+ .shape-picker { padding: 16px; border-radius: 20px; }
+ .shape-picker-head { gap: 10px; margin-bottom: 12px; }
+ .shape-picker-head h2 { font-size: 21px; }
+ .shape-picker-head .button { padding: 8px 12px; }
+ .shape-picker-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
+ .shape-choice { min-height: 86px; font-size: 12px; }
+ .shape-choice svg { width: 33px; height: 33px; }
+}
