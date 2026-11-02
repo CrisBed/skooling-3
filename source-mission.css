@@ -1,0 +1,37 @@
+#missione .source-mission{--mission-ink:#245c52;max-width:880px;margin:24px auto 44px;color:#25352f;line-height:1.65}
+#missione .mission-heading h1{font-size:clamp(29px,4vw,42px);line-height:1.2;margin:8px 0 12px}
+#missione h1:focus{outline:0}
+#missione .mission-heading>p:last-child{color:#52665e;font-size:18px;overflow-wrap:anywhere}
+#missione .mission-card{background:#fffef7;border:1px solid #d4dfd1;border-radius:24px;padding:clamp(20px,3.6vw,32px);margin:22px 0}
+#missione h2{font-size:clamp(22px,3vw,28px);line-height:1.4;margin:4px 0 20px}
+#missione h3{font-size:21px}
+#missione blockquote{margin:20px 0;padding:20px 22px;border-left:4px solid #659380;border-radius:0 16px 16px 0;background:#eff3e9;white-space:pre-wrap;overflow-wrap:anywhere;font-size:19px;line-height:1.75}
+#missione .mission-source blockquote{font-size:17px;max-height:440px;overflow:auto}
+#missione .mission-source-label{font-size:15px;color:#52665e;overflow-wrap:anywhere}
+#missione .mission-small,#missione .mission-footer p{font-size:15px;color:#52665e}
+#missione .mission-aside{padding:13px 17px;border-radius:14px;background:#fff2d6;color:#655132}
+#missione .mission-actions,#missione .mission-options{display:flex;flex-wrap:wrap;gap:12px;margin-top:22px}
+#missione .button{min-height:52px;padding:13px 20px;max-width:100%;font-size:17px;white-space:normal;line-height:1.4;border-radius:16px}
+#missione .primary{background:#245c52;color:white}
+#missione .secondary{background:#e8eee3;color:#224f40}
+#missione .mission-options .button{border:2px solid #bccdb5}
+#missione .mission-options [aria-pressed=true]{background:#d4e7d0;border-color:#245c52}
+#missione label{display:block;font-size:18px;font-weight:700;margin:20px 0}
+#missione :is(input,select,textarea){display:block;box-sizing:border-box;width:100%;min-width:0;max-width:100%;min-height:54px;border:2px solid #b4c9b0;border-radius:14px;background:white;color:#25352f;font:inherit;font-weight:400;line-height:1.6;padding:12px 14px;margin-top:10px}
+#missione input[type=number]{max-width:200px}
+#missione textarea{resize:vertical}
+#missione :is(button,input,select,textarea,summary):focus-visible{outline:3px solid #375eae;outline-offset:4px}
+#missione .mission-steps{display:flex;gap:12px;list-style:none;padding:0;margin:24px 0;flex-wrap:wrap}
+#missione .mission-steps li{display:flex;align-items:center;gap:9px;color:#5f7066;font-size:16px}
+#missione .mission-steps span{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:50%;background:#e2e9dc}
+#missione .mission-steps [aria-current]{color:#194d40;font-weight:750}
+#missione .mission-steps [aria-current] span{background:#245c52;color:white}
+#missione .mission-source{border-top:1px solid #d5dfd1;padding-top:14px;margin-top:24px}
+#missione .mission-source summary{min-height:46px;cursor:pointer;font-weight:700;color:#245c52}
+#missione .mission-hint{padding:16px 20px;background:#fff1d3;border-radius:16px;margin-top:20px}
+#missione .mission-order-result{padding:16px;background:#eef2e7;border-radius:14px;min-height:58px;white-space:pre-wrap}
+#missione .mission-past+.mission-past{border-top:1px solid #d5dfd1;padding-top:25px;margin-top:25px}
+#missione #mission-feedback{font-size:18px;font-weight:600;color:#245c52;overflow-wrap:anywhere}
+#missione .mission-footer{padding:12px 4px}
+.book-mission{margin:4px 12px 14px;min-height:46px;font-size:15px}
+@media(max-width:600px){#missione .mission-card{padding:20px 16px;border-radius:19px}#missione .mission-actions .button{flex:1 1 190px}#missione blockquote{font-size:18px;padding:16px}#missione .mission-steps{gap:10px}#missione .mission-steps li{font-size:14px}#missione .mission-steps span{width:25px;height:25px}}
