@@ -278,6 +278,7 @@ input[role="switch"]:checked { background: var(--blue); }
 input[role="switch"]:checked::after { transform: translateX(22px); }
 
 .workspace { position: fixed; z-index: 100; inset: 0; padding-top: env(safe-area-inset-top); background: #cbd5e7; display: flex; flex-direction: column; }
+body.workspace-open #app-shell { visibility:hidden; pointer-events:none; }
 .workspace-header { min-height: 68px; padding: 8px max(14px, env(safe-area-inset-right)) 8px max(14px, env(safe-area-inset-left)); display: flex; align-items: center; gap: 12px; background: #fff; border-bottom: 1px solid var(--line); }
 .workspace-title { min-width: 0; flex: 1; display: grid; }
 .workspace-title strong, .workspace-title span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -550,6 +551,8 @@ dialog::backdrop { background: rgb(13 25 53 / 48%); backdrop-filter: blur(5px); 
 /* Il margine automatico centra i fogli che entrano e parte dal bordo per quelli più larghi. */
 #pdf-scroll { display:block; }
 .pdf-pages { width:max-content; margin-inline:auto; justify-content:flex-start; }
+/* Una pagina stampata pari isolata conserva il suo posto a destra. */
+.pdf-pages.single-right::before { content:''; flex:none; width:var(--single-page-width, 280px); }
 @media(max-width:600px) { .workspace.schermo-pieno .page-controls label { font-size:12px; } .workspace.schermo-pieno .page-controls .small-button { padding:0 8px; min-height:36px; } }
 
 .sync-conflict { border: 1px solid var(--border, #ddd); border-radius: 12px; padding: 12px; margin-top: 12px; }
