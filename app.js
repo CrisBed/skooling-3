@@ -1,3 +1,9 @@
+import {initWorkspaceLock} from './workspace-lock.js';
+import {orderTasks, taskDateValue} from './task-order.js';
+import {MathPractice} from './math-practice.js';
+import {SourceMission} from './source-mission.js';
+import {inspectBackup} from './backup-inspect.js';
+import {createArchiveInventory} from './archive-ui.js';
 import {Agenda} from './agenda.js';
 import {initMenu} from './navigation.js';
 import { renderGradebook } from './gradebook.js';
@@ -19,10 +25,11 @@ import { OrarioManager } from './orario-vista.js';
 import { idMateriaDaNome, nomeMateria } from './orario.js';
 import { downloadBlob } from './strumenti.js';
 
-const state = { books: [], tasks: [], taskFilter: 'todo', coverUrls: [], fotoCompito: null, urlCompiti: [] };
+const state = { books: [], tasks: [], taskFilter: 'todo', homeworkContext: false, coverUrls: [], fotoCompito: null, urlCompiti: [] };
 let notebooks;
 let album;
 let orario;
+let archiveView;
 let toastTimer;
 
 export function notify(text, error = false) {
@@ -48,13 +55,18 @@ export function hideProgress() {
 function showReview(){return renderReview(document.querySelector('#ripasso'),{notify,refresh:showReview});}
 
 export function navigate(view, options={}) {
+  if (view === 'compiti') state.homeworkContext = options.homeworkContext === true;
+  if(view!=='missione')SourceMission.leave().catch(e=>notify(e.message,true));
+  if(view==='missione')SourceMission.render().catch(e=>notify(e.message,true));
+  if(view!=='matematica')MathPractice.leave().catch(e=>notify(e.message,true));
+  if(view==='matematica')MathPractice.render(document.querySelector('#matematica')).catch(e=>notify(e.message,true));
   if(view==='agenda') Agenda.render().catch(error=>notify(error.message,true));
   if(view==='voti') renderGradebook(document.querySelector('#voti'),{...options,notify}).catch(error=>notify(error.message,true));
   if(view==='ripasso') showReview().catch(error=>notify(error.message,true));
   if (view !== 'tutor') Tutor.leave();
   if (view === 'tutor') Tutor.render().catch(error => notify(error.message, true));
   document.querySelectorAll('.view').forEach((section) => section.classList.toggle('active', section.id === view));
-  document.querySelectorAll('[data-go]').forEach((button) => button.classList.toggle('active', button.dataset.go === view));
+  document.querySelectorAll('[data-go]').forEach((button) => button.classList.toggle('active', button.dataset.go === view && (view !== 'compiti' || (button.dataset.homeworkContext === 'true') === state.homeworkContext)));
   if (view === 'routine') Routine.render().catch(error => notify(error.message, true));
   if (['studio', 'progressi', 'viaggio'].includes(view)) Studio.render(view).catch(error => notify(error.message, true));
   if (view === 'libreria') renderLibrary();
@@ -66,7 +78,7 @@ export function navigate(view, options={}) {
   if (view === 'orario') orario.renderEditor();
   if (view === 'materie-libri') orario.renderLibriPerMateria();
   if (view === 'album') album.renderList();
-  if (view === 'impostazioni') updateStorage();
+  if (view === 'impostazioni') {updateStorage();archiveView?.refresh(DB).catch(e=>notify(e.message,true));}
   document.querySelector('#main-content').scrollTo?.(0, 0);
   verificaAggiornamentoInSospeso();
 }
@@ -98,7 +110,9 @@ function formatBytes(value) {
 
 function bindNavigation() {
   initMenu();
-  document.querySelectorAll('[data-go]').forEach((button) => button.addEventListener('click', () => navigate(button.dataset.go)));
+  document.querySelector('[data-open-game]')?.addEventListener('click',async()=>{try{const{openStudyGame}=await import('./study-game.js');await openStudyGame();}catch(e){notify(e.message,true);}});
+  document.querySelector('[data-open-study-arena]')?.addEventListener('click',async()=>{try{const{openStudyArena}=await import('./arena-game.js');await openStudyArena();}catch(e){notify(e.message,true);}});
+  document.querySelectorAll('[data-go]').forEach((button) => button.addEventListener('click', () => navigate(button.dataset.go, { homeworkContext: button.dataset.homeworkContext === 'true' })));
   document.querySelectorAll('[data-dialog-close]').forEach((button) => button.addEventListener('click', () => button.closest('dialog').close()));
   document.addEventListener('skooling:message', (event) => notify(event.detail.text, event.detail.error));
   document.addEventListener('skooling:reader-closed', () => { renderLibrary(); verificaAggiornamentoInSospeso(); });
@@ -181,12 +195,14 @@ function makeBookCard(book) {
     state.coverUrls.push(url);
     cover = `<img src="${url}" alt="Copertina di ${escapeHtml(book.titolo)}">`;
   }
-  article.innerHTML = `<button type="button" class="book-open"><div class="book-cover">${cover}</div><div class="book-info"><strong>${escapeHtml(book.titolo)}</strong><span>${escapeHtml(book.materia)} · Riprendi da pagina ${book.ultimaPagina || 1}</span></div></button><button type="button" class="card-menu" aria-label="Azioni per ${escapeHtml(book.titolo)}">⋯</button><div class="card-actions" hidden><button type="button" data-edit>Rinomina e materia</button><button type="button" data-delete class="danger-text">Elimina libro</button></div>`;
+  article.innerHTML = `<button type="button" class="book-open"><div class="book-cover">${cover}</div><div class="book-info"><strong>${escapeHtml(book.titolo)}</strong><span>${escapeHtml(book.materia)} · ${book.blob instanceof Blob?'Disponibile qui · pagina '+(book.ultimaPagina||1):'Aggiungi il PDF · scritte conservate'}</span></div></button><button type="button" class="card-menu" aria-label="Azioni per ${escapeHtml(book.titolo)}">⋯</button><div class="card-actions" hidden><button type="button" data-edit>Rinomina e materia</button><button type="button" data-delete class="danger-text">Elimina libro</button></div>`;
   article.querySelector('.book-open').addEventListener('click', () => book.blob instanceof Blob ? openBook(book.id, book.ultimaPagina) : attachBookPDF(book));
   if (!(book.blob instanceof Blob)) article.querySelector('.book-info span').textContent = 'Collega PDF su questo dispositivo';
   article.querySelector('.card-menu').addEventListener('click', () => { const menu = article.querySelector('.card-actions'); menu.hidden = !menu.hidden; });
   article.querySelector('[data-edit]').addEventListener('click', () => openBookDialog(book));
   article.querySelector('[data-delete]').addEventListener('click', () => deleteBook(book));
+  const explore=document.createElement('button');explore.type='button';explore.className='button secondary book-mission';explore.textContent='Esplora questo libro';
+  explore.onclick=async()=>{try{const links=(await DB.get('impostazioni','materie-libri'))?.valore||{},subject=Object.entries(links).find(([,ids])=>Array.isArray(ids)&&ids.includes(book.id))?.[0]||idMateriaDaNome(book.materia)||book.materia;SourceMission.open({id:'book:'+book.id,titolo:book.titolo,materia:subject,libro:book.id,pagina:book.ultimaPagina||1});}catch(e){notify(e.message,true);}};article.append(explore);
   return article;
 }
 
@@ -450,7 +466,8 @@ function bindTasks() {
 }
 
 async function renderTasks() {
-  state.tasks = (await DB.getAll('compiti')).sort((a, b) => a.consegna.localeCompare(b.consegna));
+  document.querySelector('#homework-game-panel').hidden = !state.homeworkContext;
+  state.tasks = orderTasks(await DB.getAll('compiti'), state.taskFilter);
   state.urlCompiti.forEach((url) => URL.revokeObjectURL(url));
   state.urlCompiti = [];
   const filtered = state.tasks.filter((task) => state.taskFilter === 'all' || task.stato === state.taskFilter);
@@ -464,9 +481,9 @@ async function renderTasks() {
 function makeTaskCard(task) {
   const article = document.createElement('article');
   article.className = `task-card${task.stato === 'done' ? ' done' : ''}`;
-  const due = new Date(`${task.consegna}T12:00:00`);
-  const overdue = task.stato !== 'done' && due < new Date(new Date().toDateString());
-  const dateLabel = new Intl.DateTimeFormat('it-IT', { weekday: 'short', day: 'numeric', month: 'short' }).format(due);
+  const due = taskDateValue(task.consegna) === null ? null : new Date(`${task.consegna}T12:00:00`);
+  const overdue = due !== null && task.stato !== 'done' && due < new Date(new Date().toDateString());
+  const dateLabel = due ? new Intl.DateTimeFormat('it-IT', { weekday: 'short', day: 'numeric', month: 'short' }).format(due) : 'Senza data';
   let miniatura = '';
   if (task.foto instanceof Blob) {
     const url = URL.createObjectURL(task.foto);
@@ -528,6 +545,12 @@ function bindOrario() {
 }
 
 function bindSettings() {
+  document.querySelector('#game-parent-code').addEventListener('click', async () => {
+    try {
+      const { openGameParentSettings } = await import('./game-access.js');
+      await openGameParentSettings();
+    } catch (error) { notify(error.message, true); }
+  });
   const finger = document.querySelector('#global-finger-draw');
   finger.addEventListener('change', async () => {
     await DB.put('impostazioni', { id: 'disegna-dito', valore: finger.checked });
@@ -537,8 +560,8 @@ function bindSettings() {
   const backupMode = document.querySelector('#backup-mode');
   backupMode.addEventListener('change', () => {
     document.querySelector('#backup-mode-copy').textContent = backupMode.value === 'completo'
-      ? 'Conserva tutti i dati, compresi i PDF dei libri senza scritte. Utile prima di cambiare tablet.'
-      : 'Conserva tutti i quaderni, le scritte, i materiali, i risultati e le routine. Include i PDF dei libri annotati; gli altri libri vanno reimportati dopo il ripristino.';
+      ? 'Per portare tutto nella 3.0 o su un altro tablet: comprende tutti i PDF presenti e il tuo lavoro.'
+      : 'Per proteggere il lavoro quotidiano: comprende quaderni, scritte e materiali. Dei libri include solo quelli annotati, non tutta la libreria.';
   });
   document.querySelector('#export-backup').addEventListener('click', async () => {
     const mode = backupMode.value;
@@ -555,13 +578,17 @@ function bindSettings() {
   document.querySelector('#import-backup').addEventListener('change', async (event) => {
     const [file] = event.target.files;
     if (!file) return;
-    if (!confirm('Importando il backup sostituirai i dati presenti su questo dispositivo. Continuare?')) { event.target.value = ''; return; }
+    let preview;try{preview=await inspectBackup(file);}catch(error){notify(error.message,true);event.target.value='';return;}
+    if (!confirm(preview.summary+'\n\nQuaderni, attività e scritte presenti nella 3.0 verranno sostituiti da quelli della copia. La 2.0 resta separata. Vuoi continuare?')) { event.target.value = ''; return; }
     document.dispatchEvent(new Event('skooling:backup-importing'));
     showProgress('Importo il backup', 'Tieni aperta l’app durante l’importazione.', 0);
     try {
       await DB.importBackup(file, (value) => showProgress('Importo il backup', value < 0.85 ? 'Leggo e controllo libri e quaderni…' : 'Completo il ripristino…', value));
-      notify('Backup importato. Skooling si riavvia.');
-      setTimeout(() => location.reload(), 900);
+      if(DB.session?.temporary){
+        await orario.carica();await Promise.all([renderLibrary(),notebooks.renderList(),renderTasks(),album.renderList(),updateStorage(),archiveView?.refresh(DB)]);
+        document.dispatchEvent(new Event('skooling:sync-applied'));
+        notify('Copia aperta in questa sessione temporanea. Non chiudere: usa Invia all’iPad principale se vuoi proporre questo lavoro.');
+      }else{notify('Copia importata. Riapro il tuo archivio.');setTimeout(() => location.reload(), 900);}
     } catch (error) {
       notify(error.message, true);
     } finally {
@@ -607,9 +634,10 @@ async function updateStorage() {
 // ---------------------------------------------------------------------------
 let aggiornamentoInSospeso = false;
 document.addEventListener('skooling:map-closed', verificaAggiornamentoInSospeso);
+for(const name of ['skooling:topic-trash-closed','skooling:tutor-help-closed','skooling:game-closed','skooling:game-access-closed'])document.addEventListener(name,verificaAggiornamentoInSospeso);
 document.addEventListener('close', verificaAggiornamentoInSospeso, true);
 document.addEventListener('skooling:tutor-idle', verificaAggiornamentoInSospeso);
-function editingOpen(){return Boolean(document.querySelector('dialog[open]'))||Tutor.isBusy()||(Tutor.inSession()&&document.querySelector('#tutor')?.classList.contains('active'));}
+function editingOpen(){return Boolean(document.querySelector('dialog[open]'))||SourceMission.isBusy()||SourceMission.inSession()||Tutor.isBusy()||(Tutor.inSession()&&document.querySelector('#tutor')?.classList.contains('active'));}
 
 function applicaAggiornamento() {
   if(DB.session?.dirty||DriveSync.isBusy()||document.querySelector('dialog[open]')){aggiornamentoInSospeso=true;return;}
@@ -676,6 +704,7 @@ async function registerServiceWorker() {
 
 async function start() {
   try {
+    initWorkspaceLock();
     await DB.init();
     notebooks = new NotebookManager({ notify, showProgress, hideProgress });
     album = new AlbumManager({ notify, showProgress, hideProgress, mostraFoto });
@@ -686,7 +715,7 @@ async function start() {
       vaiA: navigate,
     });
     await orario.carica();
-    initStudents({notify,canSwitch:()=>!document.body.classList.contains('workspace-open')&&document.querySelector('#progress-overlay').hidden&&!document.querySelector('dialog[open]')&&!Studio.isRecording()&&!Tutor.isBusy()&&!DriveSync.isBusy()});
+    initStudents({notify,canSwitch:()=>!document.body.classList.contains('workspace-open')&&document.querySelector('#progress-overlay').hidden&&!document.querySelector('dialog[open]')&&!Studio.isRecording()&&!SourceMission.isBusy()&&!SourceMission.inSession()&&!Tutor.isBusy()&&!DriveSync.isBusy()});
     bindNavigation();
     bindLibrary();
     bindTasks();
@@ -705,7 +734,11 @@ async function start() {
     orario.renderProssimiGiorni();
     await Promise.all([renderLibrary(), notebooks.renderList(), renderTasks(), album.renderList(), updateStorage()]);
     Tutor.init({ navigate, notify });
-    Studio.init({ openTutor: topic => Tutor.open(topic), navigate, notify, openBook, openNotebook: (id, page) => notebooks.open(id, page),
+    MathPractice.init({navigate,notify});
+    SourceMission.init({navigate,notify,openBook});
+    archiveView=createArchiveInventory(document.querySelector('#archive-inventory'));
+    await archiveView.refresh(DB);
+    Studio.init({ openLocalStudy:topic=>SourceMission.open(topic),openTutor: topic => Tutor.open(topic), navigate, notify, openBook, openNotebook: (id, page) => notebooks.open(id, page),
       openStudy: async (topic) => {
         document.body.classList.add('study-split');
         for (const selector of ['#reader-tools', '#notebook-tools']) document.querySelector(selector).hidden = true;
@@ -729,7 +762,7 @@ async function start() {
       if (active) navigate(active);
     });
     await Agenda.init({navigate,newHomework:()=>apriNuovoCompito(),editHomework:async id=>editTask(await DB.get('compiti',id)),newExam:()=>navigate('voti',{addNew:true}),editExam:id=>navigate('voti',{editId:id})});
-    navigate('tutor');
+    navigate('oggi');
     await registerServiceWorker();
   } catch (error) {
     notify(error.message || 'Skooling non riesce ad avviarsi. Ricarica la pagina.', true);
