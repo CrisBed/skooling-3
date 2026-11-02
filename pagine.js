@@ -1,57 +1,71 @@
-// Come si affiancano le pagine quando la doppia pagina e' accesa.
-//
-// Le due regole sono DIVERSE e stanno qui vicine di proposito, perche' libri e
-// quaderni riusano la stessa `SurfaceGroup` di strumenti.js e la tentazione di
-// accoppiarli allo stesso modo e' forte.
-//
-// LIBRI. La pagina 1 e' la copertina e in un libro aperto sta sempre da sola.
-// Il retro di copertina, la pagina 2, si affianca alla 3, e da li' in poi le
-// coppie sono pari-dispari: 2-3, 4-5, 6-7, fino alla fine. Se il libro ha un
-// numero PARI di pagine anche l'ultima resta sola, perche' la dispari che la
-// precede si e' gia' accoppiata con la pari prima di lei. Se il numero e'
-// DISPARI l'ultima pagina chiude normalmente la sua coppia.
-//
-// QUADERNI. Un quaderno non ha copertina, quindi le coppie restano 1-2, 3-4,
-// 5-6. Quella regola vive in quaderni.js e non passa da qui: e' un `% 2`
-// sull'indice del foglio, e non deve essere sostituita con le funzioni di
-// questo file.
+// Affiancamento dei libri: i riferimenti restano sempre i fogli fisici PDF.
+// Il lato viene invece dal numero stampato, quando è noto: dispari a sinistra,
+// pari a destra. La copertina senza numero resta separata e non viene contata.
+// Senza corrispondenza si conserva il fallback storico: copertina 1, poi 2-3.
+// I quaderni hanno una regola propria e non usano questo modulo.
 
-// La pagina di sinistra della coppia che contiene `numero`. E' sempre la 1
-// oppure una pagina pari.
-export function paginaSinistraLibro(numero) {
-  const pagina = Math.max(1, Math.floor(Number(numero)) || 1);
-  return pagina <= 1 ? 1 : pagina - (pagina % 2);
+function foglio(numero) {
+  return Math.max(1, Math.floor(Number(numero)) || 1);
 }
 
-// La pagina di destra della coppia, oppure null quando quella di sinistra sta
-// da sola: la copertina, e l'ultima pagina di un libro con pagine pari.
-export function paginaDestraLibro(numero, totale) {
-  const sinistra = paginaSinistraLibro(numero);
-  if (sinistra === 1) return null;
-  const destra = sinistra + 1;
-  return destra <= Number(totale) ? destra : null;
+function numeroStampato(numero, numbering) {
+  if (!numbering?.known) return null;
+  if (Number.isInteger(numbering.offset)) return numero - numbering.offset;
+  const label = numbering.labels?.[numero - 1]?.trim();
+  if (!label || !/^\d+$/.test(label)) return null;
+  const value = Number(label);
+  return Number.isSafeInteger(value) && value > 0 ? value : null;
 }
 
-// La pagina di sinistra della coppia precedente e della successiva. Servono
-// perche' il passo non e' costante: dalla copertina si avanza di una pagina,
-// da tutte le altre di due.
-export function coppiaPrecedenteLibro(numero) {
-  return paginaSinistraLibro(Math.max(1, paginaSinistraLibro(numero) - 2));
+function copertina(numero, numbering) {
+  return numero === 1 && !(numeroStampato(1, numbering) > 0);
 }
 
-export function coppiaSuccessivaLibro(numero, totale) {
-  const sinistra = paginaSinistraLibro(numero);
-  const avanti = sinistra === 1 ? 2 : sinistra + 2;
-  return avanti <= Number(totale) ? avanti : sinistra;
+// Usato soltanto quando manca la compagna: anche un foglio pari isolato deve
+// conservare il lato destro. La copertina non ha un lato numerato.
+export function paginaSingolaADestra(numero, numbering = null) {
+  const pagina = foglio(numero);
+  if (copertina(pagina, numbering)) return false;
+  const printed = numeroStampato(pagina, numbering);
+  return (printed ?? pagina - 1) % 2 === 0;
 }
 
-// Tutte le coppie del libro, dalla copertina all'ultima pagina. Serve per
-// provare la sequenza intera e non solo le prime pagine.
-export function coppieLibro(totale) {
+function affiancabili(prima, numbering) {
+  return !copertina(prima, numbering) &&
+    !paginaSingolaADestra(prima, numbering) &&
+    paginaSingolaADestra(prima + 1, numbering);
+}
+
+// Il primo foglio fisico della coppia contenente `numero`. Il nome storico è
+// conservato: quando è un foglio isolato pari, il lettore lo dispone a destra.
+export function paginaSinistraLibro(numero, numbering = null) {
+  const pagina = foglio(numero);
+  return pagina > 1 && affiancabili(pagina - 1, numbering) ? pagina - 1 : pagina;
+}
+
+export function paginaDestraLibro(numero, totale, numbering = null) {
+  const prima = paginaSinistraLibro(numero, numbering);
+  return prima < Number(totale) && affiancabili(prima, numbering) ? prima + 1 : null;
+}
+
+export function coppiaPrecedenteLibro(numero, numbering = null) {
+  const prima = paginaSinistraLibro(numero, numbering);
+  return paginaSinistraLibro(Math.max(1, prima - 1), numbering);
+}
+
+export function coppiaSuccessivaLibro(numero, totale, numbering = null) {
+  const prima = paginaSinistraLibro(numero, numbering);
+  const prossima = prima + (paginaDestraLibro(prima, totale, numbering) ? 2 : 1);
+  return prossima <= Number(totale) ? prossima : prima;
+}
+
+export function coppieLibro(totale, numbering = null) {
   const pagine = Math.max(0, Math.floor(Number(totale)) || 0);
   const coppie = [];
-  for (let sinistra = 1; sinistra <= pagine; sinistra = sinistra === 1 ? 2 : sinistra + 2) {
-    coppie.push([sinistra, paginaDestraLibro(sinistra, pagine)]);
+  for (let prima = 1; prima <= pagine;) {
+    const seconda = paginaDestraLibro(prima, pagine, numbering);
+    coppie.push([prima, seconda]);
+    prima += seconda ? 2 : 1;
   }
   return coppie;
 }

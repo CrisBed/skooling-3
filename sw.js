@@ -1,7 +1,7 @@
 // Incrementa questo nome dopo ogni modifica ai file dell'app.
 // Lo fa da solo pubblica.sh: il nome nuovo è ciò che porta la versione nuova
 // sul dispositivo di Gabriel, senza che lui debba reinstallare nulla.
-const CACHE_NAME = 'skooling3-v18';
+const CACHE_NAME = 'skooling3-v23';
 const STATIC_FILES = [
   './',
   './index.html',
@@ -9,6 +9,31 @@ const STATIC_FILES = [
   './style.css',
   './appearance.css',
   './app.js',
+  './task-order.js',
+  './workspace-lock.js',
+  './reader-zoom.js',
+  './book-numbering-store.js',
+  './geometry.js',
+  './shape-picker.js',
+  './shape-picker.css',
+  './gentle.css',
+  './journal-model.js',
+  './journal-drive.js',
+  './journal-engine.js',
+  './annotation-storage.js',
+  './backup-inspect.js',
+  './archive-model.js',
+  './archive-ui.js',
+  './math-practice.js',
+  './math-practice-model.js',
+  './math-practice.css',
+  './pizza-lab.js',
+  './pizza-lab-model.js',
+  './pizza-lab.css',
+  './source-mission.js',
+  './source-mission-model.js',
+  './source-mission-source.js',
+  './source-mission.css',
   './agenda.js',
   './agenda-model.js',
   './agenda.css',

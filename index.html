@@ -18,8 +18,13 @@
   <link rel="stylesheet" href="./agenda.css">
   <link rel="stylesheet" href="./routine.css">
   <link rel="stylesheet" href="./appearance.css">
+  <link rel="stylesheet" href="./gentle.css">
+  <link rel="stylesheet" href="./math-practice.css">
+  <link rel="stylesheet" href="./pizza-lab.css">
+  <link rel="stylesheet" href="./source-mission.css">
   <link rel="stylesheet" href="./tutor-avatar.css">
   <link rel="stylesheet" href="./book-pages.css">
+  <link rel="stylesheet" href="./shape-picker.css">
   <title>Skooling 3.0</title>
   <link rel="stylesheet" href="./lesson-materials.css">
 </head>
@@ -44,6 +49,7 @@
         <button type="button" data-go="libreria">Libri</button>
         <button type="button" data-go="quaderni">Quaderni</button>
         <button type="button" data-go="compiti">Segna i compiti</button>
+        <button type="button" data-go="voti">Verifiche e interrogazioni</button>
         <button type="button" data-go="orario">Orario delle lezioni</button>
         <button type="button" data-go="album">Foto e materiali</button>
       </section>
@@ -68,6 +74,8 @@
       <section id="tutor" class="view" aria-label="Studia con me"></section>
       <section id="routine" class="view" aria-label="Le mie routine"></section>
       <section id="studio" class="view" aria-label="Materie e studio"></section>
+      <section id="matematica" class="view" aria-label="Un passo di matematica"></section>
+      <section id="missione" class="view" aria-label="Un’esplorazione dai tuoi materiali"></section>
       <section id="ripasso" class="view" aria-label="Ripasso programmato"></section>
       <section id="voti" class="view" aria-label="Verifiche e voti"></section>
       <section id="progressi" class="view" aria-label="Progressi nello studio"></section>
@@ -80,6 +88,7 @@
             <button class="button secondary" type="button" data-go="materie-libri"><span aria-hidden="true">▤</span> Libri per materia</button>
           </div>
         </div>
+        <article class="start-gentle"><p class="eyebrow">Si parte da una curiosità</p><h2>Da dove vuoi iniziare?</h2><p>Un libro, un quaderno o un piccolo mistero da risolvere. Scegli tu.</p><div class="start-actions"><button type="button" class="button primary" data-go="libreria">Apri un libro</button><button type="button" class="button secondary" data-go="quaderni">Apri un quaderno</button><button type="button" class="button secondary start-mission" data-go="matematica"><strong>Il mistero della metà</strong><span>Frazioni, pizza e indizi. Tocca per cominciare.</span></button></div></article>
         <div class="oggi-griglia">
           <article class="oggi-blocco">
             <span class="card-label">Le ore di oggi</span>
@@ -218,7 +227,7 @@
           <p><a href="./installazione.html" target="_blank" rel="noopener">Porta la 3.0 sull’iPad · guida al passaggio sicuro</a></p>
 <article class="settings-card" id="sync-card">
             <span class="card-label">I miei dispositivi</span><h2>Google Drive</h2>
-            <p>L’iPad principale invia il lavoro approvato. Su computer le prove restano temporanee fino a “Invia agli altri dispositivi”. Foto, audio e materiali personali vengono trasferiti una volta; i PDF dei libri si ricollegano separatamente.</p>
+            <p>L’iPad principale conserva il lavoro condiviso. Dal computer puoi inviare una proposta: l’iPad la controlla prima di aggiornare gli altri dispositivi. Senza invio le prove restano solo in questa apertura. I PDF dei libri si aggiungono una volta su ciascun dispositivo.</p>
             <p id="sync-account">Nessun account collegato</p><p id="sync-last" class="small-copy"></p>
             <p id="sync-status" role="status">Controllo del collegamento…</p>
             <div class="button-row"><button id="sync-connect" class="button primary" type="button" disabled>Collega Google Drive</button><button id="sync-now" class="button secondary" type="button" disabled>Sincronizza ora</button><button id="sync-disconnect" class="button secondary" type="button" disabled>Scollega</button></div>
@@ -228,7 +237,7 @@
           </article>
 
           <article class="settings-card accent-card">
-            <span class="card-label">Spazio</span><h2>Archivio locale</h2>
+            <span class="card-label">Spazio</span><h2>Il tuo archivio qui</h2><div id="archive-inventory"></div>
             <div class="storage-meter" aria-hidden="true"><span id="storage-bar"></span></div>
             <p id="storage-copy">Controllo dello spazio disponibile…</p>
             <p id="persistence-copy" class="small-copy"></p>
@@ -236,10 +245,10 @@
           <article class="settings-card">
             <span class="card-label">Sicurezza</span><h2>Backup</h2>
             <label for="backup-mode">Cosa vuoi salvare?</label>
-            <select id="backup-mode"><option value="essenziale" selected>Essenziale · il mio lavoro</option><option value="completo">Completo · tutti i libri</option></select>
-            <p id="backup-mode-copy">Conserva tutti i quaderni, le scritte, i materiali, i risultati e le routine. Include i PDF dei libri annotati; gli altri libri vanno reimportati dopo il ripristino.</p>
+            <select id="backup-mode"><option value="essenziale" selected>Il mio lavoro · solo i libri annotati</option><option value="completo">Tutto · lavoro e tutti i libri</option></select>
+            <p id="backup-mode-copy">Questa copia protegge il lavoro quotidiano. Per trasferire anche tutti i libri scegli “Tutto · lavoro e tutti i libri”.</p>
             <div id="backup-missing" hidden><strong>Libri da reimportare</strong><p>Il backup ripristinato non conteneva questi PDF:</p><ul id="backup-missing-list"></ul></div>
-            <div class="button-row"><button id="export-backup" class="button primary" type="button">Esporta backup</button><label class="button secondary file-button"><input id="import-backup" type="file" hidden>Importa backup</label></div>
+            <div class="button-row"><button id="export-backup" class="button primary" type="button">Esporta backup</button><label class="button secondary file-button"><input id="import-backup" type="file" hidden>Apri una copia di sicurezza</label></div>
           </article>
           <article class="settings-card">
             <span class="card-label">Scrittura</span><h2>Dito e Pencil</h2>
@@ -309,9 +318,10 @@
           <button id="next-page" class="icon-button" type="button" aria-label="Pagina successiva">›</button>
           <button id="focus-left-page" class="small-button" type="button" hidden>Sinistra</button>
           <button id="focus-right-page" class="small-button" type="button" hidden>Destra</button>
-          <button id="align-book-pages" class="small-button" type="button">Allinea numeri</button>
+          <button id="align-book-pages" class="small-button" type="button">Numero pagina</button>
           <button id="fit-page" class="small-button" type="button">Adatta</button>
           <span id="zoom-label" class="zoom-label">100%</span>
+          <span id="book-numbering-status" role="status"></span>
         </div>
       </div>
       <aside id="reader-tools" class="toolbox" aria-label="Strumenti di annotazione">
