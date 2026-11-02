@@ -278,6 +278,7 @@ input[role="switch"]:checked { background: var(--blue); }
 input[role="switch"]:checked::after { transform: translateX(22px); }
 
 .workspace { position: fixed; z-index: 100; inset: 0; padding-top: env(safe-area-inset-top); background: #cbd5e7; display: flex; flex-direction: column; }
+body.workspace-open #app-shell { visibility:hidden; pointer-events:none; }
 .workspace-header { min-height: 68px; padding: 8px max(14px, env(safe-area-inset-right)) 8px max(14px, env(safe-area-inset-left)); display: flex; align-items: center; gap: 12px; background: #fff; border-bottom: 1px solid var(--line); }
 .workspace-title { min-width: 0; flex: 1; display: grid; }
 .workspace-title strong, .workspace-title span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
