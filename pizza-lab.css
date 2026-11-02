@@ -1,0 +1,33 @@
+.pizza-lab{box-sizing:border-box;max-width:100%;margin:22px 0 28px;padding:clamp(18px,3vw,28px);background:#f3f5e9;border:1px solid #cedbc8;border-radius:23px;color:#22312c;line-height:1.6}
+.pizza-lab *{box-sizing:border-box}
+.pizza-lab .pizza-lab-heading h2{margin:6px 0 10px!important;font-size:clamp(25px,3.2vw,34px)!important;line-height:1.25!important}
+.pizza-lab .pizza-lab-heading p{margin:9px 0 0;max-width:55ch}
+.pizza-lab .pizza-lab-kicker{font-size:12px!important;font-weight:800;letter-spacing:.1em;color:#166454}
+.pizza-lab .pizza-lab-workbench{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:24px;align-items:center;margin-top:14px}
+.pizza-lab .pizza-lab-board,.pizza-lab .pizza-lab-controls{min-width:0}
+.pizza-lab .pizza-lab-pizza{display:block;width:100%;max-width:380px;height:auto;margin:0 auto;overflow:visible;touch-action:manipulation}
+.pizza-lab .pizza-lab-crust{fill:#d6b077;stroke:#8f6c3d;stroke-width:3}
+.pizza-lab .pizza-lab-wedge{fill:#fff2cd;stroke:#8f7952;stroke-width:2.5;stroke-linejoin:round}
+.pizza-lab .pizza-lab-slice{cursor:pointer;outline:none}
+.pizza-lab .pizza-lab-slice.is-selected .pizza-lab-wedge{fill:#a7c99f;stroke:#365f41}
+.pizza-lab .pizza-lab-number{fill:#343d2e;font:700 24px system-ui,sans-serif;pointer-events:none;user-select:none}
+.pizza-lab .pizza-lab-chosen-dot{fill:#1b553e;pointer-events:none}
+.pizza-lab .pizza-lab-slice:focus-visible .pizza-lab-wedge{stroke:#315db4;stroke-width:6}
+.pizza-lab .pizza-lab-slice:hover .pizza-lab-wedge{stroke-width:4}
+.pizza-lab .pizza-lab-portion{text-align:center;font-size:22px!important;font-weight:800;color:#164f3c;margin:2px 0 10px!important}
+.pizza-lab .pizza-lab-help{font-size:14px!important;color:#52645b;text-align:center;max-width:350px;margin:8px auto!important}
+.pizza-lab .pizza-lab-cut-label{display:block;font-size:18px;font-weight:750;color:#22312c}
+.pizza-lab .pizza-lab-cut-label select{display:block;width:100%;max-width:100%;min-width:0;min-height:54px;background:#fffef8;border:2px solid #a8bea0;border-radius:14px;padding:12px 14px;font:700 18px system-ui,sans-serif;color:#22312c;margin-top:10px;cursor:pointer}
+.pizza-lab .pizza-lab-cut-note{font-size:15px!important;color:#52645b;margin:10px 0 18px!important}
+.pizza-lab .pizza-lab-check{display:block;max-width:100%;width:100%;min-height:56px!important;padding:14px 18px!important;border-radius:15px!important;font-size:17px!important;white-space:normal!important;background:#166454!important;color:white!important}
+.pizza-lab .pizza-lab-feedback{padding:15px 16px;margin:18px 0 0!important;border:1px solid #d8dfcb;border-radius:15px;background:#fffef7;font-size:17px!important;min-height:94px;overflow-wrap:anywhere}
+.pizza-lab .pizza-lab-feedback[data-kind="half"]{background:#e2eedb;border-color:#9aba8f}
+.pizza-lab .pizza-lab-feedback[data-kind="blocked"]{background:#fff2d8;border-color:#d7c49c}
+.pizza-lab .pizza-lab-discovery{margin-top:18px;padding-top:16px;border-top:1px solid #cbd8c4}
+.pizza-lab .pizza-lab-discovery[hidden]{display:none}
+.pizza-lab .pizza-lab-discovery-label{font-size:12px!important;letter-spacing:.08em;font-weight:800;color:#166454;margin:0!important}
+.pizza-lab .pizza-lab-equation{font-size:clamp(22px,3.8vw,29px)!important;line-height:1.4!important;font-weight:800;color:#164f3c;margin:7px 0!important;overflow-wrap:anywhere}
+.pizza-lab .pizza-lab-discovery>p:last-child{font-size:16px!important;margin:10px 0 0!important}
+.pizza-lab .pizza-lab-footnote{font-size:14px!important;color:#52645b;margin:20px 0 0!important}
+.pizza-lab :is(select,button):focus-visible{outline:3px solid #315db4;outline-offset:4px}
+@media(max-width:700px){.pizza-lab .pizza-lab-workbench{grid-template-columns:minmax(0,1fr);gap:20px}.pizza-lab .pizza-lab-pizza{max-width:360px}.pizza-lab .pizza-lab-controls{max-width:440px;width:100%;margin:auto}.pizza-lab{padding:18px 14px;border-radius:18px}.pizza-lab .pizza-lab-portion{font-size:20px!important}}

@@ -71,3 +71,8 @@ non un'imitazione di un prodotto esistente.
 
 Le curiosità riportano fatti verificabili. Battute e oroscopi sono
 dichiaratamente scherzi, e l'etichetta sul biglietto lo dice ogni volta.
+
+
+## Three.js, Isola delle Idee 3D
+
+Motore Three.js r187 (pacchetto npm three0.187.0), moduli locali dal rilascio pubblico distribuito tramite jsDelivr. Copyright2010–2026 three.js authors, licenza MIT completa in vendor/THREE-LICENSE.txt. Nessuna dipendenza da CDN durante l’uso. La scena, il personaggio e gli accessori sono geometrie originali di Skooling, senza risorse di Fortnite o di altri giochi.

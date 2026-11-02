@@ -1,5 +1,7 @@
 // Motore vettoriale condiviso da libri e quaderni.
 import { createId } from './db.js';
+import {NEW_SHAPE_TYPES,isGeometryShape,geometryPaths,geometryHitTest,traceGeometry,constrainShapeEnd} from './geometry.js';
+import {attachShapePicker} from './shape-picker.js';
 import { disegnaSegnoMusicale, ingombroSegno, segnoValido } from './musica.js';
 
 export const COLORS = ['#1f2937', '#2457d6', '#db3a34', '#15956d', '#f0b429', '#8b5cf6', '#f472b6'];
@@ -55,6 +57,7 @@ function distanceToSegment(point, start, end) {
 }
 
 export function hitTestElement(element, point, tolerance = 0.025) {
+  if(isGeometryShape(element.tipo))return geometryHitTest(element,point,tolerance);
   if (element.tipo === 'simbolo') {
     const bordi = riquadroElemento(element);
     return point.x >= bordi.sinistra - tolerance && point.x <= bordi.destra + tolerance
@@ -165,7 +168,7 @@ function splitUnderline(element, eraserPoint, tolerance) {
 // La conversione si paga una volta sola e solo sulla forma toccata: per questo
 // prima si controlla con un conto semplice se la gomma ci e' sopra davvero.
 // ---------------------------------------------------------------------------
-export const FORME_TAGLIABILI = ['linea', 'freccia', 'cerchio', 'rettangolo'];
+export const FORME_TAGLIABILI = ['linea', 'freccia', 'cerchio', 'rettangolo',...NEW_SHAPE_TYPES];
 const PASSI_CERCHIO = 96;
 const MISURA_PREDEFINITA = { larghezza: 1000, altezza: 1000 };
 
@@ -185,6 +188,7 @@ function trattoDaForma(element, punti, indice = 0) {
 function lunghezzaPunta(element) { return 12 + (element.spessore || 2); }
 
 export function convertiInTratti(element, misura = MISURA_PREDEFINITA) {
+  if(isGeometryShape(element.tipo))return geometryPaths(element).map((points,i)=>trattoDaForma(element,points,i));
   if (element.tipo === 'cerchio') {
     const cx = (element.x1 + element.x2) / 2;
     const cy = (element.y1 + element.y2) / 2;
@@ -375,6 +379,8 @@ export function drawElement(context, element, width, height, selected = false) {
       context.fillStyle = '#2457d6';
       context.fillRect(x + boxWidth - 7, y + boxHeight - 7, 14, 14);
     }
+  } else if(isGeometryShape(element.tipo)) {
+    if(traceGeometry(context,element,width,height))context.stroke();
   } else {
     const x1 = element.x1 * width;
     const y1 = element.y1 * height;
@@ -722,6 +728,7 @@ export class DrawingSurface {
       grassetto: false, corsivo: false, allineamento: 'left',
     };
     this.active = null;
+    this.highlightPreview = null;
     this.selectedId = null;
     this.editingId = null;   // id della casella di testo aperta per scriverci
     this.textEditor = null;  // l'elemento HTML editabile in-place (apre la tastiera grande)
@@ -798,6 +805,7 @@ export class DrawingSurface {
   }
 
   setElements(elements = []) {
+    this.clearHighlightPreview();
     this.scartaEditorTesto(); // cambio pagina: la casella aperta non deve restare appesa
     this.elements = clone(elements);
     this.selectedId = null;
@@ -944,7 +952,7 @@ export class DrawingSurface {
     if (!active) return;
     this.active = null;
     if (active.kind === 'erase') this.elements = this.history.current();
-    else if (active.kind === 'move-text') {
+    else if (['move-text','move-element','resize-element'].includes(active.kind)) {
       const element = this.elements.find((item) => item.id === active.id);
       if (element) Object.assign(element, active.original);
     } else if (active.id) {
@@ -1086,7 +1094,14 @@ export class DrawingSurface {
       const dx = point.x - this.active.start.x;
       const dy = point.y - this.active.start.y;
       if (this.active.kind === 'resize-element') {
-        ridimensionaElemento(element, this.active.original, bordiTrascinando(this.active.bordi, this.active.angolo, point));
+        let bounds=bordiTrascinando(this.active.bordi, this.active.angolo, point);
+        if(element.tipo==='quadrato'){
+          const left=this.active.angolo.includes('sinistra'),top=this.active.angolo.includes('alto'),rect=this.canvas.getBoundingClientRect();
+          const fixed={x:left?bounds.destra:bounds.sinistra,y:top?bounds.basso:bounds.alto};
+          const end=constrainShapeEnd('quadrato',fixed,{x:left?bounds.sinistra:bounds.destra,y:top?bounds.alto:bounds.basso},rect.width,rect.height);
+          bounds={sinistra:Math.min(fixed.x,end.x),destra:Math.max(fixed.x,end.x),alto:Math.min(fixed.y,end.y),basso:Math.max(fixed.y,end.y)};
+        }
+        ridimensionaElemento(element, this.active.original,bounds);
         this.active.changed = true;
       } else if (this.active.kind === 'move-element') {
         spostaElemento(element, this.active.original, dx, dy);
@@ -1103,11 +1118,13 @@ export class DrawingSurface {
       const last = this.active.punti.at(-1);
       if (Math.hypot(point.x - last.x, point.y - last.y) > 0.0015) this.active.punti.push(point);
     } else {
-      this.active.x2 = point.x;
+      const rect=this.canvas.getBoundingClientRect();
+      const end=constrainShapeEnd(this.active.tipo,{x:this.active.x1,y:this.active.y1},point,rect.width,rect.height);
+      this.active.x2 = end.x;
       // Una sottolineatura sta sotto le parole, e le righe di un libro sono
       // dritte: resta orizzontale comunque si muova la mano. Per una riga
       // storta c'è lo strumento Riga.
-      this.active.y2 = this.active.tipo === 'sottolineatura' ? this.active.y1 : point.y;
+      this.active.y2 = this.active.tipo === 'sottolineatura' ? this.active.y1 : end.y;
     }
     this.render();
   }
@@ -1265,13 +1282,94 @@ export class DrawingSurface {
   }
 
   render(context = this.context, width = this.canvas.width, height = this.canvas.height) {
+    // Mentre si evidenzia non ricostruiamo l'intera pagina a ogni campione
+    // Pencil. I segni precedenti si preparano una volta; il nuovo segmento si
+    // aggiunge opaco e la trasparenza si applica una sola volta alla somma.
+    // Esportazioni e rendering a tratto concluso usano sempre gli originali.
+    if (context === this.context && width === this.canvas.width && height === this.canvas.height &&
+        this.tool === 'evidenziatore' && this.active?.tipo === 'evidenziatore' &&
+        this.elements.at(-1) === this.active) {
+      this.renderHighlightPreview(context, width, height);
+      return;
+    }
+    if (context === this.context) this.clearHighlightPreview();
     disegnaElementi(context, this.elements, width, height, {
       selectedId: this.selectedId,
       saltaId: this.editingId, // in scrittura: quella casella la mostra l'HTML
     });
   }
 
+  clearHighlightPreview() {
+    const preview = this.highlightPreview;
+    this.highlightPreview = null;
+    if (!preview) return;
+    // Safari deve poter restituire subito la memoria delle due tele grandi,
+    // senza aspettare il garbage collector o la prossima pagina del libro.
+    for (const canvas of [preview.highlights, preview.foreground]) {
+      canvas.width = 0;
+      canvas.height = 0;
+    }
+  }
+
+  renderHighlightPreview(context, width, height) {
+    const active = this.active;
+    let preview = this.highlightPreview;
+    let region = null;
+    if (!preview || preview.active !== active || preview.elements !== this.elements ||
+        preview.count !== this.elements.length || preview.width !== width || preview.height !== height ||
+        preview.selectedId !== this.selectedId || preview.editingId !== this.editingId ||
+        preview.points > active.punti.length) {
+      this.clearHighlightPreview();
+      const highlights = creaFoglioDiLavoro(width, height);
+      const foreground = creaFoglioDiLavoro(width, height);
+      const ink = highlights.getContext('2d');
+      const front = foreground.getContext('2d');
+      for (const element of this.elements) {
+        if (element.id === this.editingId) continue;
+        if (element.tipo === 'evidenziatore') drawElement(ink, element, width, height);
+      }
+      for (const element of this.elements) {
+        if (element.id === this.editingId || element.tipo !== 'evidenziatore') continue;
+        if (element.id === this.selectedId) disegnaRiquadroSelezione(front, element, width, height);
+      }
+      for (const element of this.elements) {
+        if (element.id === this.editingId || element.tipo === 'evidenziatore') continue;
+        drawElement(front, element, width, height, element.id === this.selectedId);
+      }
+      preview = this.highlightPreview = {
+        active, elements: this.elements, count: this.elements.length, width, height,
+        selectedId: this.selectedId, editingId: this.editingId,
+        highlights, foreground, points: active.punti.length,
+      };
+    } else if (active.punti.length > preview.points) {
+      const points = active.punti.slice(Math.max(0, preview.points - 1));
+      drawElement(preview.highlights.getContext('2d'), {...active, punti: points}, width, height);
+      preview.points = active.punti.length;
+      // Il segno nuovo cambia solo questa striscia. Copiare due tele intere
+      // per ogni campione Pencil muoveva milioni di pixel inutilmente.
+      // Il margine include punta tonda e antialias, anche ai bordi del foglio.
+      const margin = (active.spessore || 2) * INGROSSO_EVIDENZIATORE / 2 + 2;
+      let left = width, top = height, right = 0, bottom = 0;
+      for (const point of points) {
+        left = Math.min(left, point.x * width); right = Math.max(right, point.x * width);
+        top = Math.min(top, point.y * height); bottom = Math.max(bottom, point.y * height);
+      }
+      const x = Math.max(0, Math.floor(left - margin));
+      const y = Math.max(0, Math.floor(top - margin));
+      region = [x, y, Math.min(width, Math.ceil(right + margin)) - x, Math.min(height, Math.ceil(bottom + margin)) - y];
+    } else return; // Il campione non ha aggiunto un punto: niente da ridisegnare.
+    const rect = region || [0, 0, width, height];
+    context.clearRect(...rect);
+    context.save();
+    context.globalAlpha = TINTA_EVIDENZIATORE;
+    context.drawImage(preview.highlights, ...rect, ...rect);
+    context.globalAlpha = 1;
+    context.drawImage(preview.foreground, ...rect, ...rect);
+    context.restore();
+  }
+
   destroy() {
+    this.clearHighlightPreview();
     this.resizeObserver?.disconnect();
   }
 }
@@ -1543,4 +1641,5 @@ export function attachToolbox(root, surface) {
     else if (button.hasAttribute('data-redo')) surface.redo();
   });
   root.querySelector('[data-readonly]')?.addEventListener('change', (event) => surface.setReadOnly(event.target.checked));
+  attachShapePicker(root,surface,{onSelect:()=>{textPanel.hidden=true;root.classList.remove('text-tool-active');}});
 }
